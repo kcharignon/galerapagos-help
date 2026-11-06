@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Image de construction de l'application Android : JDK 17 et SDK Android (Gradle vient du wrapper du projet, vérifié par empreinte).
 # Rien n'y contacte un autre site que les dépôts officiels (Gradle, Google, Maven Central).
-FROM eclipse-temurin:17-jdk-jammy
+FROM eclipse-temurin:25-jdk-jammy
 
 # « commandlinetools-linux-<n>_latest.zip » : numéro et empreinte du dépôt officiel de Google.
 ARG CMDLINE_TOOLS=16111833
