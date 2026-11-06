@@ -304,6 +304,7 @@ fun ResultPane(
     big: String,
     bad: Boolean,
     sub: String,
+    gain: String? = null,
     buttonLabel: String,
     sea: Boolean,
     onAgain: () -> Unit,
@@ -329,6 +330,16 @@ fun ResultPane(
             color = if (bad) Gx.Red else Gx.OrangeDeep,
             textAlign = TextAlign.Center,
         )
+        if (gain != null) {
+            Text(
+                gain,
+                modifier = Modifier.padding(top = 8.dp),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Black,
+                color = Gx.OrangeDeep,
+                textAlign = TextAlign.Center,
+            )
+        }
         Text(
             sub,
             modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp, bottom = 16.dp),

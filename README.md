@@ -16,14 +16,14 @@ Le style suit celui du jeu (relevé sur les scans de la boîte, du plateau et de
 ## Règles implémentées
 
 **Bois (jungle)**
-- 1 planche offerte (2 avec la **hache**).
+- 1 planche **gratuite** (2 avec la **hache**) : toujours gardée.
 - Le joueur peut tenter de 1 à 5 planches de plus : tirage simultané de ce nombre d'éléments dans un sac de 6 dont 1 serpent.
-- Serpent tiré → mordu, **tout le bois est perdu**, même la planche offerte. Risque = `n / 6` (17 % pour 1, 83 % pour 5).
+- Serpent tiré → mordu : on perd seulement les planches **du risque** ; les planches gratuites sont **toujours gardées**. Risque = `n / 6` (17 % pour 1, 83 % pour 5).
 - 0 planche de plus = aucun risque.
 
 **Poisson (mer)**
 - 1 tirage dans un sac de 6 : 3× « 1 poisson », 2× « 2 poissons », 1× « 3 poissons ».
-- Avec la **canne à pêche** : 2 tirages d'un coup (sans remise), **le total est la somme** → 2 à 5 poissons.
+- Sans canne : on pêche à la **lance en bois** (une prise). Avec la **canne à pêche** (la ligne et son flotteur) : 2 tirages d'un coup (sans remise), **le total est la somme** → 2 à 5 poissons.
   Choix d'interprétation : si la canne doit garder seulement la meilleure prise, changer `fishing()` (web) et `GameRules.fish()` (Android).
 
 Le hasard vient de `crypto.getRandomValues` (web) et `kotlin.random.Random` (Android).

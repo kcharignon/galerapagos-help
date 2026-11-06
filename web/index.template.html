@@ -88,6 +88,11 @@ svg{display:block}
 .gear .ico{width:40px;height:40px;flex:none;opacity:.5;filter:grayscale(.7);transition:.2s}
 .gear b{display:block;font-size:17px}
 .gear small{display:block;font-size:13px;color:var(--ink2);margin-top:1px}
+.free-line{display:flex;align-items:center;gap:12px;margin-top:10px;padding:8px 12px;border-radius:14px;background:rgba(61,187,76,.16);border:2px solid rgba(61,187,76,.55)}
+.free-logs{display:flex;flex-direction:column;gap:3px;width:84px;flex:none}
+.free-logs svg{width:100%;height:auto}
+.free-line b{display:block;font-size:14px;font-weight:900}
+.free-line small{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-top:1px}
 .gear .sw{margin-left:auto;flex:none;width:50px;height:30px;border-radius:15px;background:rgba(90,58,38,.25);position:relative;transition:background .2s}
 .gear .sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .25s var(--ease-pop);box-shadow:0 2px 4px rgba(0,0,0,.35)}
 .gear[aria-pressed=true]{background:rgba(61,187,76,.18);border-color:var(--leaf)}
@@ -115,11 +120,13 @@ svg{display:block}
 .pane.result{text-align:center;padding:6px 4px 0}
 .big{font-size:44px;font-weight:900;line-height:1;color:var(--orange-deep);text-shadow:0 3px 0 #fff6e0,0 6px 0 rgba(90,58,38,.2)}
 .big.bad{color:var(--red)}
+.gain{margin-top:8px;font-size:22px;font-weight:900;color:var(--orange-deep);text-shadow:0 2px 0 #fff6e0}
+.gain[hidden]{display:none}
 .kicker{font-size:14px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-deep);margin-bottom:6px}
 .pane.result p{margin:10px 6px 16px;font-size:15px;line-height:1.4;font-weight:700;color:var(--ink2)}
 
 /* ── pile de rondins ── */
-.pile{position:relative;width:270px;height:268px;flex:none}
+.pile{position:relative;width:270px;height:268px;flex:none;z-index:1}
 .pile .shadow{position:absolute;left:30px;right:30px;bottom:-6px;height:22px;border-radius:50%;background:rgba(60,35,10,.35);filter:blur(6px)}
 .pl{position:absolute;width:236px;left:calc(50% - 118px + var(--dx));bottom:calc(var(--i) * 31px);transform:rotate(var(--rot));
   animation:drop .7s var(--ease-pop) both;animation-delay:calc(var(--i) * 170ms);filter:drop-shadow(0 4px 2px rgba(0,0,0,.4))}
@@ -128,7 +135,7 @@ svg{display:block}
 @keyframes drop{0%{transform:translateY(-460px) rotate(calc(var(--rot) + 50deg));opacity:0}15%{opacity:1}70%{transform:translateY(10px) rotate(var(--rot))}100%{transform:rotate(var(--rot))}}
 
 /* ── serpent ── */
-.snake-wrap{width:230px;animation:strike .9s var(--ease-pop) both;transform-origin:50% 100%;filter:drop-shadow(0 8px 6px rgba(0,0,0,.4))}
+.snake-wrap{width:210px;margin-bottom:-26px;animation:strike .9s var(--ease-pop) both;transform-origin:50% 100%;filter:drop-shadow(0 8px 6px rgba(0,0,0,.4))}
 @keyframes strike{0%{transform:translateY(120%) scale(.7)}35%{transform:translateY(-12px) scale(1.12) rotate(-4deg)}55%{transform:translateY(0) scale(1) rotate(5deg)}75%{transform:rotate(-3deg)}100%{transform:none}}
 .snake-wrap svg{animation:sway 1.2s ease-in-out .9s infinite alternate}
 @keyframes sway{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
@@ -156,6 +163,13 @@ svg{display:block}
 @keyframes bob{0%{transform:translateY(0)}60%{transform:translateY(4px)}100%{transform:translateY(-4px) rotate(4deg)}}
 .scene[data-state=busy] .float.tug{animation:tug .22s ease-in-out infinite alternate}
 @keyframes tug{from{transform:translateY(-3px)}to{transform:translateY(12px)}}
+
+/* lance en bois (pêche sans canne) : elle guette, puis plonge à chaque coup */
+.spearman{position:relative;width:150px;height:210px;margin-bottom:6px}
+.spearman .ripple{position:absolute;left:0;right:0;bottom:2px;opacity:0;animation:strike-ripple .8s ease-out infinite;animation-delay:.38s}
+.spearman .spear{position:absolute;left:50%;bottom:34px;width:42px;margin-left:-21px;transform-origin:50% 100%;animation:stab .8s ease-in infinite}
+@keyframes stab{0%,45%{transform:translateY(-44px) rotate(-7deg)}62%{transform:translateY(22px) rotate(0)}100%{transform:translateY(-44px) rotate(-7deg)}}
+@keyframes strike-ripple{0%{transform:scale(.3);opacity:.95}100%{transform:scale(1.3);opacity:0}}
 
 /* ── poissons ── */
 .catches{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:8px}
@@ -212,6 +226,7 @@ svg{display:block}
           <svg class="ico" viewBox="0 0 64 64"><use href="#a-axe" width="64" height="64"/></svg>
           <span><b>Hache</b><small>2 planches offertes au lieu d’1</small></span><i class="sw"></i>
         </button>
+        <div class="free-line"><div class="free-logs" id="free-logs"></div><div><b id="free-txt"></b><small id="free-sub"></small></div></div>
         <div class="lbl"><span>Planches en plus</span><em id="risk-txt"></em></div>
         <div class="chips" role="radiogroup" aria-label="Nombre de planches supplémentaires"></div>
         <div class="meter" aria-hidden="true"><i id="risk-bar"></i></div>
@@ -221,6 +236,7 @@ svg{display:block}
       <div class="pane result">
         <div class="kicker" id="wood-kicker"></div>
         <div class="big" id="wood-big"></div>
+        <div class="gain" id="wood-gain" hidden></div>
         <p id="wood-sub"></p>
         <button class="cta" id="wood-again">Repartir en forêt</button>
       </div>
@@ -240,7 +256,7 @@ svg{display:block}
           <span><b>Canne à pêche</b><small>Deux prises au lieu d’une</small></span><i class="sw"></i>
         </button>
         <p class="preview" id="fish-preview" style="margin-top:16px"></p>
-        <button class="cta sea" id="fish-go">Lancer la ligne</button>
+        <button class="cta sea" id="fish-go">Pêcher à la lance</button>
       </div>
       <div class="pane result">
         <div class="kicker" id="fish-kicker"></div>
@@ -277,14 +293,14 @@ function shuffle(list, rand = randInt) {
 function drawFromBag(bag, count, rand = randInt) { return shuffle(bag, rand).slice(0, count); }
 
 /**
- * Bois : 1 planche offerte (2 avec la hache). `extra` (0-5) = tirages de risque.
- * Si le serpent sort dans les tirages : tout le bois est perdu, même la planche offerte.
+ * Bois : 1 planche gratuite (2 avec la hache), TOUJOURS gardée. `extra` (0-5) = tirages de risque.
+ * Si le serpent sort dans les tirages : seules les planches en plus sont perdues ; les gratuites restent.
  */
 function gatherWood({ extra, axe }, rand = randInt) {
   const free = axe ? 2 : 1;
   extra = Math.max(0, Math.min(5, extra | 0));
   const bitten = extra > 0 && drawFromBag(WOOD_BAG, extra, rand).includes('serpent');
-  return { free, extra, bitten, total: bitten ? 0 : free + extra };
+  return { free, extra, bitten, lost: bitten ? extra : 0, total: free + (bitten ? 0 : extra) };
 }
 const biteChance = (extra) => extra / WOOD_BAG.length;
 
@@ -321,7 +337,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const pl = (n, w, plural = w + 's') => `${n} ${n > 1 ? plural : w}`;
 const vibrate = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} };
-const VB = { plank: '0 0 220 40', fish: '0 0 110 64', snake: '0 0 190 210', ripple: '0 0 120 40', float: '0 0 28 40' };
+const VB = { plank: '0 0 220 40', fish: '0 0 110 64', snake: '0 0 190 210', ripple: '0 0 120 40', float: '0 0 28 40', spear: '0 0 60 140' };
 const art = (name, cls = '') =>
   `<svg class="${cls}" viewBox="${VB[name]}"><use href="#a-${name}" width="${VB[name].split(' ')[2]}" height="${VB[name].split(' ')[3]}"/></svg>`;
 
@@ -387,8 +403,11 @@ function renderForestControls() {
   const bar = $('#risk-bar');
   bar.style.width = (extra ? Math.max(pct, 6) : 0) + '%';
   bar.style.setProperty('--bgw', (100 / Math.max(pct, 6)) * 100 + '%');
+  $('#free-logs').innerHTML = art('plank').repeat(free);
+  $('#free-txt').textContent = `Gagné d’office : ${pl(free, 'planche')}`;
+  $('#free-sub').textContent = extra ? 'même si le serpent mord' : 'à la lisière, sans aucun risque';
   $('#wood-preview').textContent = extra
-    ? `Si tout va bien : ${free} + ${extra} = ${pl(free + extra, 'planche')}. Si le serpent frappe : rien, pas même la planche de départ.`
+    ? `Si tout va bien : ${free} + ${extra} = ${pl(free + extra, 'planche')}. Si le serpent mord : tu perds les ${pl(extra, 'planche')} du risque et gardes ${free > 1 ? 'tes ' + free : 'ta planche'}.`
     : `Tu ramasses ${pl(free, 'planche')} à la lisière. Sans danger.`;
   $('#wood-go').textContent = extra ? 'S’enfoncer dans la jungle' : 'Ramasser en lisière';
   syncSheet();
@@ -416,23 +435,29 @@ async function runForest() {
 }
 function renderForestResult(r, opts) {
   const el = screens.forest, stage = $('#forest-stage');
-  const big = $('#wood-big'), sub = $('#wood-sub');
+  const big = $('#wood-big'), sub = $('#wood-sub'), gain = $('#wood-gain');
+  const pile = (total) => {
+    const rots = [-3, 2.5, -1.5, 3, -2.5, 1.5, -2];
+    const dxs = [-8, 10, -4, 7, -10, 5, -3];
+    let html = `<div class="pile" style="height:${46 + (total - 1) * 31}px"><div class="shadow"></div>`;
+    for (let i = 0; i < total; i++) {
+      html += `<div class="pl${i < r.free ? ' free' : ''}" style="--i:${i};--dx:${dxs[i]}px;--rot:${rots[i]}deg">${art('plank')}</div>`;
+    }
+    return html + '</div>';
+  };
+  gain.hidden = true;
   if (r.bitten) {
-    stage.innerHTML = `<div class="snake-wrap">${art('snake')}</div>`;
+    // le serpent frappe, mais les planches gratuites sont déjà dans la pile
+    stage.innerHTML = `<div class="snake-wrap">${art('snake')}</div>` + pile(r.free);
     const fl = $('#forest-flash'); fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on');
     el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
     $('#wood-kicker').textContent = 'Un serpent !';
     big.textContent = 'Mordu !'; big.className = 'big bad';
-    sub.textContent = `Le serpent t’a surpris : tu perds tout ton bois, même ${r.free > 1 ? 'les planches' : 'la planche'} de départ.`;
+    gain.textContent = `+${pl(r.total, 'planche')} quand même`; gain.hidden = false;
+    sub.textContent = `Les ${pl(r.lost, 'planche')} du risque sont perdues, mais tu gardes ${r.free > 1 ? 'tes ' + r.free + ' planches gratuites' : 'ta planche gratuite'}.`;
     vibrate([220, 70, 220, 70, 320]);
   } else {
-    const rots = [-3, 2.5, -1.5, 3, -2.5, 1.5, -2];
-    const dxs = [-8, 10, -4, 7, -10, 5, -3];
-    let html = '<div class="pile"><div class="shadow"></div>';
-    for (let i = 0; i < r.total; i++) {
-      html += `<div class="pl${i < r.free ? ' free' : ''}" style="--i:${i};--dx:${dxs[i]}px;--rot:${rots[i]}deg">${art('plank')}</div>`;
-    }
-    stage.innerHTML = html + '</div>';
+    stage.innerHTML = pile(r.total);
     $('#wood-kicker').textContent = r.extra ? 'Le serpent dormait' : 'Rien à craindre';
     big.textContent = `+${pl(r.total, 'planche')}`; big.className = 'big';
     sub.textContent = r.extra
@@ -449,9 +474,10 @@ $('#wood-again').addEventListener('click', () => { run++; setState('forest', 'id
 function renderSeaControls() {
   const { rod } = prefs;
   $('#rod-toggle').setAttribute('aria-pressed', rod);
+  $('#fish-go').textContent = rod ? 'Lancer la ligne' : 'Pêcher à la lance';
   const st = fishStats(rod ? 2 : 1);
   $('#fish-preview').textContent =
-    `${rod ? 'Tu lances deux fois la ligne' : 'Tu lances la ligne une fois'} : de ${pl(st.min, 'poisson')} à ${st.max}, ` +
+    `${rod ? 'Tu lances deux fois la ligne' : 'Sans canne, tu pêches à la lance, une seule prise'} : de ${pl(st.min, 'poisson')} à ${st.max}, ` +
     `environ ${st.mean.toFixed(1).replace('.', ',')} en moyenne.`;
   syncSheet();
 }
@@ -463,10 +489,13 @@ async function runSea() {
   const my = ++run;
   const opts = { rod: prefs.rod };
   setState('sea', 'busy'); syncSheet();
-  $('#sea-stage').innerHTML =
-    `<div class="hint">La ligne frétille</div>
-     <div class="bobber"><div class="ripple">${art('ripple')}</div><div class="ripple">${art('ripple')}</div>
-       <div class="float tug">${art('float')}</div></div>`;
+  // la ligne et son flotteur seulement avec la canne ; sans canne, une lance en bois
+  $('#sea-stage').innerHTML = opts.rod
+    ? `<div class="hint">La ligne frétille</div>
+       <div class="bobber"><div class="ripple">${art('ripple')}</div><div class="ripple">${art('ripple')}</div>
+         <div class="float tug">${art('float')}</div></div>`
+    : `<div class="hint">Tu guettes un poisson</div>
+       <div class="spearman"><div class="ripple">${art('ripple')}</div><div class="spear">${art('spear')}</div></div>`;
   await sleep(reduced ? 200 : 1800);
   if (my !== run) return;
   renderSeaResult(fishing(opts), opts);
@@ -489,7 +518,7 @@ function renderSeaResult(r, opts) {
   $('#fish-big').textContent = `+${pl(r.total, 'poisson')}`;
   $('#fish-sub').textContent = opts.rod
     ? `Deux prises avec la canne : ${r.catches.join(' + ')} = ${pl(r.total, 'poisson')}.`
-    : r.total === min ? 'Un seul poisson au bout de la ligne.' : `${pl(r.total, 'poisson')} au bout de la ligne.`;
+    : r.total === min ? 'Un seul poisson au bout de la lance.' : `${pl(r.total, 'poisson')} au bout de la lance.`;
   vibrate(r.total * 12);
   setState('sea', 'result'); syncSheet();
 }

@@ -454,7 +454,8 @@ const stars = () => '';
     [0.45, C.wood],
     [1, C.woodDark],
   ]);
-  s.add(rect(6, 5, 196, 30, body, { rx: 15, stroke: C.line, strokeWidth: 3 }));
+  // bâton : bout gauche arrondi, bout droit droit (x = 196) où vient se coller la section coupée
+  s.add(pth('M21 5H196V35H21A15 15 0 0 1 21 5Z', body, { stroke: C.line, strokeWidth: 3, strokeLinejoin: 'round' }));
   s.add(rect(24, 9, 160, 6, C.woodLight, { rx: 3, opacity: 0.75 }));
   s.add(
     line('M44 22Q92 19 140 23', C.woodDark, 1.6, { opacity: 0.7 }),
@@ -462,9 +463,9 @@ const stars = () => '';
     line('M100 17l4 -2', C.woodDark, 1.4, { opacity: 0.7 }),
     line('M18 24l6 -1', C.woodDark, 1.4, { opacity: 0.7 })
   );
-  // bout coupé
-  s.add(ellipse(204, 20, 10, 15, '#edc488', { stroke: C.line, strokeWidth: 3 }));
-  s.add(ellipse(204, 20, 6.5, 10, 'none', { stroke: '#b9803f', strokeWidth: 1.6 }), ellipse(204, 20, 3, 4.5, 'none', { stroke: '#b9803f', strokeWidth: 1.4 }));
+  // section coupée : ellipse centrée sur l'extrémité du bâton, de la hauteur exacte du bâton (15 de demi-hauteur)
+  s.add(ellipse(196, 20, 9, 15, '#edc488', { stroke: C.line, strokeWidth: 3 }));
+  s.add(ellipse(196, 20, 5.5, 10, 'none', { stroke: '#b9803f', strokeWidth: 1.6 }), ellipse(196, 20, 2.4, 4.5, 'none', { stroke: '#b9803f', strokeWidth: 1.4 }));
   // deux liens de corde
   for (const x of [34, 150]) {
     s.add(rect(x, 3, 6, 34, C.rope, { rx: 3, stroke: '#7b5a26', strokeWidth: 1.6 }), rect(x + 10, 3, 6, 34, C.rope, { rx: 3, stroke: '#7b5a26', strokeWidth: 1.6 }));
@@ -565,6 +566,27 @@ const stars = () => '';
   s.add(line('M52 9C63 24 60 40 46 49', '#37c3cc', 2.2));
   s.add(group('translate(44 53) rotate(-25)', ellipse(0, 0, 8.5, 4, '#fff', { stroke: C.line, strokeWidth: 1.8 }), pth('M-8.5 0Q-8.5 -4 0 -4Q-3 0 0 4Q-8.5 4 -8.5 0Z', '#e0243a', { stroke: C.line, strokeWidth: 1.4 })));
   s.add(circle(52, 47, 1.8, C.line), circle(54.5, 42, 1.8, C.line), circle(57, 37, 1.8, C.line));
+  s.save();
+})();
+
+(function spear() {
+  // lance en bois : long manche brun, pointe de pierre ligaturée (pêche sans canne), pointe vers le bas
+  const s = new Svg('spear', 60, 140);
+  const shaft = s.lin('shaft', 24, 0, 36, 0, [
+    [0, '#d98a47'],
+    [0.5, C.wood],
+    [1, C.woodDark],
+  ]);
+  const stone = s.lin('stone', 0, 96, 0, 138, [
+    [0, '#e4ebf6'],
+    [1, '#8b98b2'],
+  ]);
+  s.add(rect(26, 4, 8, 104, shaft, { rx: 4, stroke: C.line, strokeWidth: 3 }));
+  s.add(rect(28.5, 8, 2.4, 92, C.woodLight, { rx: 1.2, opacity: 0.7 }));
+  s.add(pth('M30 138L20 102Q30 94 40 102Z', stone, { stroke: C.line, strokeWidth: 3, strokeLinejoin: 'round' }));
+  s.add(line('M30 126L26 108', '#6b7892', 1.6, { opacity: 0.8 }), pth('M25 103Q30 99 35 103L33 108Q30 105 27 108Z', '#f7faff', { opacity: 0.9 }));
+  for (const y of [98, 106]) s.add(rect(23, y, 14, 5, C.rope, { rx: 2.5, stroke: '#7b5a26', strokeWidth: 1.4 }));
+  s.add(line('M23 100L37 104M37 100L23 104', '#a07f3d', 1.1));
   s.save();
 })();
 

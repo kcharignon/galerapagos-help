@@ -5,9 +5,9 @@ import kotlin.random.Random
 /**
  * Règles du tirage. Aucune bille n'est montrée au joueur : c'est un simple moteur de hasard.
  *
- * - Bois : 1 planche offerte (2 avec la hache). Le joueur peut ajouter de 1 à 5 planches en
- *   risquant le coup : un tirage simultané de autant d'éléments dans un sac de 6 dont 1 serpent.
- *   Si le serpent sort, TOUT le bois est perdu (même la planche offerte).
+ * - Bois : 1 planche gratuite (2 avec la hache), TOUJOURS gardée. Le joueur peut ajouter de 1 à 5
+ *   planches en risquant le coup : un tirage simultané de autant d'éléments dans un sac de 6 dont
+ *   1 serpent. Si le serpent sort, seules les planches en plus sont perdues : les gratuites restent.
  * - Pêche : un tirage dans un sac de 6 (3×1 poisson, 2×2, 1×3). Avec la canne : deux tirages
  *   simultanés, le total est la somme des poissons.
  */
@@ -21,7 +21,9 @@ object GameRules {
     val fishBag: List<Int> = listOf(1, 1, 1, 2, 2, 3)
 
     data class WoodResult(val free: Int, val extra: Int, val bitten: Boolean) {
-        val total: Int get() = if (bitten) 0 else free + extra
+        /** Planches du risque perdues par la morsure (les gratuites ne sont jamais perdues). */
+        val lost: Int get() = if (bitten) extra else 0
+        val total: Int get() = free + (if (bitten) 0 else extra)
     }
 
     data class FishResult(val catches: List<Int>) {

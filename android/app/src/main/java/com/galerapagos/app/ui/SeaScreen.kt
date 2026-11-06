@@ -32,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -79,8 +80,12 @@ fun SeaScreen(prefs: Prefs, onBack: () -> Unit) {
             val r = result
             when {
                 phase == SeaPhase.Busy -> {
-                    HintPill("La ligne frétille", Modifier.align(Alignment.TopCenter).padding(top = 40.dp))
-                    Bobber()
+                    // la ligne et son flotteur seulement avec la canne ; sans canne, une lance en bois
+                    HintPill(
+                        if (rod) "La ligne frétille" else "Tu guettes un poisson",
+                        Modifier.align(Alignment.TopCenter).padding(top = 40.dp),
+                    )
+                    if (rod) Bobber() else SpearStab()
                 }
                 phase == SeaPhase.Result && r != null -> Catches(r, resultRod)
             }
@@ -101,9 +106,9 @@ fun SeaScreen(prefs: Prefs, onBack: () -> Unit) {
                     sub = if (resultRod) {
                         "Deux prises avec la canne : ${r.catches.joinToString(" + ")} = ${plural(r.total, "poisson")}."
                     } else if (r.total == stats.min) {
-                        "Un seul poisson au bout de la ligne."
+                        "Un seul poisson au bout de la lance."
                     } else {
-                        "${plural(r.total, "poisson")} au bout de la ligne."
+                        "${plural(r.total, "poisson")} au bout de la lance."
                     },
                     buttonLabel = "Pêcher encore",
                     sea = true,
@@ -124,7 +129,7 @@ fun SeaScreen(prefs: Prefs, onBack: () -> Unit) {
                     prefs.rod = rod
                 }
                 Text(
-                    text = "${if (rod) "Tu lances deux fois la ligne" else "Tu lances la ligne une fois"} : " +
+                    text = "${if (rod) "Tu lances deux fois la ligne" else "Sans canne, tu pêches à la lance, une seule prise"} : " +
                         "de ${plural(stats.min, "poisson")} à ${stats.max}, environ $mean en moyenne.",
                     modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = 16.dp, bottom = 12.dp).heightIn(min = 40.dp),
                     fontSize = 14.sp,
@@ -132,13 +137,53 @@ fun SeaScreen(prefs: Prefs, onBack: () -> Unit) {
                     color = Gx.Ink2,
                     fontWeight = FontWeight.Bold,
                 )
-                CtaButton(text = "Lancer la ligne", sea = true, enabled = idle, onClick = { start() })
+                CtaButton(text = if (rod) "Lancer la ligne" else "Pêcher à la lance", sea = true, enabled = idle, onClick = { start() })
             }
         },
     )
 }
 
-/** Flotteur qui tressaute pendant l'attente. */
+/** Lance en bois (pêche sans canne) : elle guette, puis plonge à chaque coup, et l'eau s'agite à l'impact. */
+@Composable
+private fun SpearStab() {
+    val phase by rememberInfiniteTransition(label = "spear").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(800, easing = LinearEasing)),
+        label = "spearPhase",
+    )
+    Box(Modifier.size(150.dp, 210.dp)) {
+        Art(
+            R.drawable.art_ripple,
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .aspectRatio(120f / 40f)
+                .graphicsLayer {
+                    val p = ((phase - 0.46f) / 0.54f).coerceIn(0f, 1f)
+                    val s = 0.3f + 1.0f * p
+                    scaleX = s
+                    scaleY = s
+                    alpha = if (phase < 0.46f) 0f else 0.95f * (1f - p)
+                },
+        )
+        Art(
+            R.drawable.art_spear,
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 34.dp)
+                .width(42.dp)
+                .aspectRatio(60f / 140f)
+                .graphicsLayer {
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                    translationY = piecewise(phase, 0f to -44f, 0.45f to -44f, 0.62f to 22f, 1f to -44f) * density
+                    rotationZ = piecewise(phase, 0f to -7f, 0.45f to -7f, 0.62f to 0f, 1f to -7f)
+                },
+        )
+    }
+}
+
+/** Flotteur qui tressaute pendant l'attente (pêche à la canne). */
 @Composable
 private fun Bobber() {
     val t = rememberInfiniteTransition(label = "bobber")

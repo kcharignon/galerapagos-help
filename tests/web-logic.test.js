@@ -15,18 +15,26 @@ const near = (actual, expected, tolerance = 0.01) =>
 
 test('sans risque : la planche offerte est gardée (2 avec la hache)', () => {
   for (let i = 0; i < 1000; i++) {
-    assert.deepEqual(rules.gatherWood({ extra: 0, axe: false }), { free: 1, extra: 0, bitten: false, total: 1 });
-    assert.deepEqual(rules.gatherWood({ extra: 0, axe: true }), { free: 2, extra: 0, bitten: false, total: 2 });
+    assert.deepEqual(rules.gatherWood({ extra: 0, axe: false }), { free: 1, extra: 0, bitten: false, lost: 0, total: 1 });
+    assert.deepEqual(rules.gatherWood({ extra: 0, axe: true }), { free: 2, extra: 0, bitten: false, lost: 0, total: 2 });
   }
 });
 
-test('morsure : tout est perdu, sinon offert + extra', () => {
+test('morsure : seules les planches du risque sont perdues, les gratuites restent', () => {
   let bites = 0;
   for (let i = 0; i < 5000; i++) {
     const r = rules.gatherWood({ extra: 3, axe: true });
-    if (r.bitten) { bites++; assert.equal(r.total, 0); } else assert.equal(r.total, 5);
+    if (r.bitten) { bites++; assert.equal(r.total, 2); assert.equal(r.lost, 3); } else { assert.equal(r.total, 5); assert.equal(r.lost, 0); }
   }
   assert.ok(bites > 0 && bites < 5000);
+});
+
+test('on repart toujours avec au moins les planches gratuites', () => {
+  for (let i = 0; i < 5000; i++) {
+    const extra = i % 6;
+    assert.ok(rules.gatherWood({ extra, axe: false }).total >= 1);
+    assert.ok(rules.gatherWood({ extra, axe: true }).total >= 2);
+  }
 });
 
 test('risque de morsure = extra / 6', () => {

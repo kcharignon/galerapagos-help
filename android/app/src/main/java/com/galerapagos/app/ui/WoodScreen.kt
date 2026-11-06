@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -148,7 +150,15 @@ fun WoodScreen(prefs: Prefs, onBack: () -> Unit) {
                     Modifier.align(Alignment.TopCenter).padding(top = 40.dp),
                 )
                 phase == Phase.Result && r != null ->
-                    if (r.bitten) SnakeStrike() else PlankPile(total = r.total, free = r.free)
+                    if (r.bitten) {
+                        // le serpent frappe, mais les planches gratuites sont déjà dans la pile
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            SnakeStrike(Modifier.offset(y = 26.dp))
+                            PlankPile(total = r.free, free = r.free)
+                        }
+                    } else {
+                        PlankPile(total = r.total, free = r.free)
+                    }
             }
         },
         sheet = {
@@ -168,6 +178,7 @@ fun WoodScreen(prefs: Prefs, onBack: () -> Unit) {
                     axe = !axe
                     prefs.axe = axe
                 }
+                FreeLine(free = free, risky = extra > 0)
                 RiskLabel(extra)
                 ExtraChips(selected = extra, enabled = idle) {
                     extra = it
@@ -177,7 +188,8 @@ fun WoodScreen(prefs: Prefs, onBack: () -> Unit) {
                 Text(
                     text = if (extra > 0) {
                         "Si tout va bien : $free + $extra = ${plural(free + extra, "planche")}. " +
-                            "Si le serpent frappe : rien, pas même la planche de départ."
+                            "Si le serpent mord : tu perds les ${plural(extra, "planche")} du risque et gardes " +
+                            "${if (free > 1) "tes $free" else "ta planche"}."
                     } else {
                         "Tu ramasses ${plural(free, "planche")} à la lisière. Sans danger."
                     },
@@ -196,6 +208,36 @@ fun WoodScreen(prefs: Prefs, onBack: () -> Unit) {
             }
         },
     )
+}
+
+/** Rappelle ce qui est gagné d'office : les planches gratuites, gardées même si le serpent mord. */
+@Composable
+private fun FreeLine(free: Int, risky: Boolean) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        Modifier
+            .padding(top = 10.dp)
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Color(0x293DBB4C))
+            .border(2.dp, Color(0x8C3DBB4C), shape)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.width(84.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            repeat(free) { Art(R.drawable.art_plank, Modifier.fillMaxWidth().aspectRatio(220f / 40f)) }
+        }
+        Column {
+            Text("Gagné d’office : ${plural(free, "planche")}", fontSize = 14.sp, fontWeight = FontWeight.Black)
+            Text(
+                if (risky) "même si le serpent mord" else "à la lisière, sans aucun risque",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Gx.Ink2,
+            )
+        }
+    }
 }
 
 @Composable
@@ -292,8 +334,9 @@ private fun WoodResultPane(r: GameRules.WoodResult, onAgain: () -> Unit) {
             kicker = "Un serpent !",
             big = "Mordu !",
             bad = true,
-            sub = "Le serpent t’a surpris : tu perds tout ton bois, même " +
-                "${if (r.free > 1) "les planches" else "la planche"} de départ.",
+            gain = "+${plural(r.total, "planche")} quand même",
+            sub = "Les ${plural(r.lost, "planche")} du risque sont perdues, mais tu gardes " +
+                "${if (r.free > 1) "tes ${r.free} planches gratuites" else "ta planche gratuite"}.",
             buttonLabel = "Repartir en forêt",
             sea = false,
             onAgain = onAgain,
@@ -323,7 +366,7 @@ private val PLANK_DXS = listOf(-8, 10, -4, 7, -10, 5, -3)
 
 @Composable
 private fun PlankPile(total: Int, free: Int) {
-    Box(Modifier.size(270.dp, 268.dp)) {
+    Box(Modifier.size(270.dp, (46 + 31 * (total - 1)).dp)) {
         Box(
             Modifier
                 .align(Alignment.BottomCenter)
@@ -383,7 +426,7 @@ private fun BoxScope.Plank(index: Int, free: Boolean, rot: Float, dx: Int) {
 }
 
 @Composable
-private fun SnakeStrike() {
+private fun SnakeStrike(modifier: Modifier = Modifier) {
     val p = remember { Animatable(0f) }
     LaunchedEffect(Unit) { p.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 90f)) }
     val sway by rememberInfiniteTransition(label = "sway").animateFloat(
@@ -394,8 +437,8 @@ private fun SnakeStrike() {
     )
     Art(
         R.drawable.art_snake,
-        Modifier
-            .width(230.dp)
+        modifier
+            .width(210.dp)
             .aspectRatio(190f / 210f)
             .graphicsLayer {
                 transformOrigin = TransformOrigin(0.5f, 1f)

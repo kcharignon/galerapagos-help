@@ -18,11 +18,30 @@ class GameRulesTest {
     }
 
     @Test
-    fun `morsure perd tout, sinon planche offerte plus extra`() {
+    fun `morsure ne retire que les planches du risque`() {
         val random = Random(1)
+        var bites = 0
         repeat(5_000) {
             val r = GameRules.gatherWood(extra = 3, axe = true, random = random)
-            if (r.bitten) assertEquals(0, r.total) else assertEquals(2 + 3, r.total)
+            if (r.bitten) {
+                bites++
+                assertEquals(2, r.total) // les 2 planches gratuites de la hache restent
+                assertEquals(3, r.lost)
+            } else {
+                assertEquals(2 + 3, r.total)
+                assertEquals(0, r.lost)
+            }
+        }
+        assertTrue(bites in 1 until 5_000)
+    }
+
+    @Test
+    fun `on repart toujours avec au moins les planches gratuites`() {
+        val random = Random(5)
+        repeat(5_000) {
+            val extra = random.nextInt(0, 6)
+            assertTrue(GameRules.gatherWood(extra, axe = false, random = random).total >= 1)
+            assertTrue(GameRules.gatherWood(extra, axe = true, random = random).total >= 2)
         }
     }
 
