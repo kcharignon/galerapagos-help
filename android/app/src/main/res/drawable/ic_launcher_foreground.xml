@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- soleil -->
+    <path
+        android:pathData="M54,38m-17,0a17,17 0 1,0 34,0a17,17 0 1,0 -34,0z"
+        android:fillColor="#F9C97A" />
+    <!-- planches empilées -->
+    <path
+        android:pathData="M36,58h36a4,4 0 0,1 4,4v6a4,4 0 0,1 -4,4h-36a4,4 0 0,1 -4,-4v-6a4,4 0 0,1 4,-4z"
+        android:fillColor="#C78A4A"
+        android:strokeColor="#5E3515"
+        android:strokeWidth="2.5" />
+    <path
+        android:pathData="M40,74h32a4,4 0 0,1 4,4v4a4,4 0 0,1 -4,4h-32a4,4 0 0,1 -4,-4v-4a4,4 0 0,1 4,-4z"
+        android:fillColor="#B27A40"
+        android:strokeColor="#5E3515"
+        android:strokeWidth="2.5" />
+</vector>

@@ -1,0 +1,19 @@
+# Node / outils
+node_modules/
+
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+*.iml
+.DS_Store
+
+# Visuels originaux du jeu (usage privé uniquement, jamais publiés)
+art/originals/
+
+# APK construit par `make android` et fichiers locaux
+dist/
+.env

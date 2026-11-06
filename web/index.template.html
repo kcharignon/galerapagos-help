@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#150b2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Galérapagos — Bois &amp; Poisson</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234a2068'/%3E%3Crect x='8' y='24' width='48' height='16' rx='5' fill='%23c78a4a' stroke='%235e3515' stroke-width='3'/%3E%3Ccircle cx='46' cy='14' r='7' fill='%23f9c97a'/%3E%3C/svg%3E">
+<style>
+:root{
+  --ink:#12061c; --plum:#2a0f3d; --violet:#4a2068; --magenta:#b23a7c; --coral:#f08a5d;
+  --sun:#f9c97a; --sand:#f4d28f; --teal:#1f8a9b; --leaf:#58c24d; --danger:#e0243a; --paper:#fff4dc;
+  --sheet-h:300px;
+  --ease-pop:cubic-bezier(.2,1.4,.4,1);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#0b0412;color:var(--paper);overscroll-behavior:none;
+  font-family:"Trebuchet MS",ui-rounded,"Segoe UI",system-ui,sans-serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+svg{display:block}
+
+/* ── cadre téléphone (même sur ordinateur) ── */
+#app{position:relative;width:100%;max-width:460px;height:100vh;height:100dvh;max-height:940px;margin:0 auto;overflow:hidden;background:var(--ink)}
+@media (min-width:520px){#app{margin-top:max(0px,calc((100vh - 940px)/2));border-radius:36px;box-shadow:0 0 0 8px #1b0a28,0 30px 80px rgba(0,0,0,.6)}}
+#rotate{display:none;position:fixed;inset:0;z-index:99;background:var(--ink);align-items:center;justify-content:center;text-align:center;padding:24px;font-size:20px;font-weight:700}
+@media (orientation:landscape) and (max-height:520px){#rotate{display:flex}}
+
+/* ── écrans ── */
+.screen{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .35s,visibility 0s .35s}
+.screen.active{opacity:1;visibility:visible;transition:opacity .35s}
+.art{position:absolute;inset:0;width:100%;height:100%}
+
+/* ── accueil ── */
+#home{background:radial-gradient(120% 60% at 50% 0%,#5b2a78 0%,#2a0f3d 55%,#150b2e 100%);display:flex;flex-direction:column;
+  padding:calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom))}
+.logo{margin:6px 0 0;text-align:center;line-height:.92;transform:rotate(-2deg);font-weight:900;letter-spacing:.02em;
+  font-size:clamp(40px,13vw,58px);color:#cfe0ea;background:linear-gradient(180deg,#e6f0f5 0%,#8fa8bd 55%,#5b728a 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 3px 0 #0c1a2b) drop-shadow(0 8px 10px rgba(0,0,0,.55))}
+.logo span{display:block}
+.tagline{text-align:center;margin:12px 0 16px;font-size:15px;color:var(--sun);letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.cards{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px}
+.card{position:relative;flex:1;min-height:0;border-radius:28px;overflow:hidden;text-align:left;border:2px solid rgba(255,255,255,.2);
+  box-shadow:0 10px 0 rgba(0,0,0,.35),0 18px 30px rgba(0,0,0,.4);transition:transform .15s,box-shadow .15s}
+.card:active{transform:translateY(6px);box-shadow:0 4px 0 rgba(0,0,0,.35),0 8px 14px rgba(0,0,0,.4)}
+.card::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(12,4,20,.85) 100%)}
+.card .txt{position:absolute;left:20px;right:20px;bottom:16px;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.card h2{margin:0;font-size:30px;line-height:1;font-weight:900;text-shadow:0 3px 0 rgba(0,0,0,.45)}
+.card p{margin:6px 0 0;font-size:15px;opacity:.92}
+.card .ico{width:84px;flex:none;filter:drop-shadow(0 4px 0 rgba(0,0,0,.4))}
+.card.sea .ico{width:70px}
+
+/* ── écrans de jeu ── */
+.scene{background:var(--ink)}
+.scene .bg{transform-origin:50% 60%;transition:transform 2.4s ease-out}
+.scene[data-state=busy] .bg{transform:scale(1.06)}
+.scene .fg{pointer-events:none;transform-origin:50% 100%;z-index:1}
+.stage{position:absolute;left:0;right:0;top:calc(64px + env(safe-area-inset-top));bottom:var(--sheet-h);z-index:2;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:14px}
+.topbar{position:absolute;z-index:6;left:0;right:0;top:0;display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 14px 0}
+.back{width:44px;height:44px;border-radius:50%;background:rgba(18,6,28,.55);border:2px solid rgba(255,255,255,.25);display:grid;place-items:center;backdrop-filter:blur(6px)}
+.back svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.back:active{transform:scale(.92)}
+.title{font-size:22px;font-weight:900;text-shadow:0 2px 0 rgba(0,0,0,.5),0 0 14px rgba(0,0,0,.5)}
+
+.sheet{position:absolute;z-index:4;left:0;right:0;bottom:0;border-radius:30px 30px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(40,14,60,.88),rgba(18,6,28,.95));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:2px solid rgba(249,201,122,.4);box-shadow:0 -10px 30px rgba(0,0,0,.35)}
+.sheet::before{content:"";display:block;width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin:-6px auto 12px}
+.pane{display:none}
+.scene[data-state=idle] .pane.controls,.scene[data-state=busy] .pane.controls{display:block}
+.scene[data-state=result] .pane.result{display:block;animation:rise .45s var(--ease-pop)}
+.scene[data-state=busy] .pane.controls{opacity:.45;pointer-events:none;transition:opacity .2s}
+@keyframes rise{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+
+.gear{width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:18px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.14);text-align:left;transition:background .2s,border-color .2s}
+.gear .ico{width:40px;height:40px;flex:none;opacity:.55;filter:grayscale(.8);transition:.2s}
+.gear b{display:block;font-size:17px}
+.gear small{display:block;font-size:13px;opacity:.75;margin-top:1px}
+.gear .sw{margin-left:auto;flex:none;width:50px;height:30px;border-radius:15px;background:rgba(255,255,255,.18);position:relative;transition:background .2s}
+.gear .sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:transform .25s var(--ease-pop);box-shadow:0 2px 4px rgba(0,0,0,.4)}
+.gear[aria-pressed=true]{background:rgba(249,201,122,.16);border-color:var(--sun)}
+.gear[aria-pressed=true] .ico{opacity:1;filter:none}
+.gear[aria-pressed=true] .sw{background:var(--leaf)}
+.gear[aria-pressed=true] .sw::after{transform:translateX(20px)}
+
+.lbl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:14px 2px 8px;font-weight:800;font-size:15px;letter-spacing:.02em}
+.lbl em{font-style:normal;font-weight:700;font-size:13px;color:var(--sun)}
+.chips{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.chip{height:54px;border-radius:16px;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.16);font-size:24px;font-weight:900;box-shadow:0 4px 0 rgba(0,0,0,.35);transition:transform .12s,background .15s}
+.chip:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.chip[aria-checked=true]{background:var(--sun);color:#3a1650;border-color:#fff3c4}
+.chip small{display:block;font-size:10px;font-weight:800;letter-spacing:.04em;margin-top:-3px;text-transform:uppercase}
+.meter{height:8px;border-radius:4px;background:rgba(255,255,255,.12);margin:12px 2px 0;overflow:hidden}
+.meter i{display:block;height:100%;width:0;border-radius:4px;background:linear-gradient(90deg,var(--leaf),#e8d048 55%,var(--danger));background-size:var(--bgw,100%) 100%;transition:width .3s var(--ease-pop)}
+.preview{margin:10px 2px 12px;font-size:14px;line-height:1.35;opacity:.92;min-height:38px}
+
+.cta{width:100%;height:60px;border-radius:20px;font-size:20px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#fff;
+  background:linear-gradient(180deg,#ff9a64,#d9457c);box-shadow:0 6px 0 #7a2250,0 12px 20px rgba(0,0,0,.35);text-shadow:0 2px 0 rgba(0,0,0,.3);transition:transform .1s,box-shadow .1s}
+.cta:active{transform:translateY(5px);box-shadow:0 1px 0 #7a2250,0 4px 8px rgba(0,0,0,.35)}
+.cta.sea{background:linear-gradient(180deg,#46c3c8,#1f7f9b);box-shadow:0 6px 0 #0b4458,0 12px 20px rgba(0,0,0,.35)}
+.cta.sea:active{box-shadow:0 1px 0 #0b4458,0 4px 8px rgba(0,0,0,.35)}
+
+.pane.result{text-align:center;padding:6px 4px 0}
+.big{font-size:44px;font-weight:900;line-height:1;color:var(--sun);text-shadow:0 3px 0 rgba(0,0,0,.45)}
+.big.bad{color:#ff6b7d}
+.kicker{font-size:14px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.8;margin-bottom:6px}
+.pane.result p{margin:10px 6px 16px;font-size:15px;line-height:1.4;opacity:.92}
+
+/* ── pile de planches ── */
+.pile{position:relative;width:240px;height:268px;flex:none}
+.pile .shadow{position:absolute;left:30px;right:30px;bottom:-6px;height:22px;border-radius:50%;background:rgba(0,0,0,.4);filter:blur(6px)}
+.pl{position:absolute;width:150px;left:calc(50% - 75px + var(--dx));bottom:calc(var(--i) * 31px);transform:rotate(var(--rot));
+  animation:drop .7s var(--ease-pop) both;animation-delay:calc(var(--i) * 170ms);filter:drop-shadow(0 4px 2px rgba(0,0,0,.45))}
+.pl.free::after{content:"";position:absolute;right:-6px;top:-8px;width:22px;height:22px;border-radius:50%;background:var(--leaf);border:2px solid #fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-size:cover}
+@keyframes drop{0%{transform:translateY(-460px) rotate(calc(var(--rot) + 50deg));opacity:0}15%{opacity:1}70%{transform:translateY(10px) rotate(var(--rot))}100%{transform:rotate(var(--rot))}}
+
+/* ── serpent ── */
+.snake-wrap{width:230px;animation:strike .9s var(--ease-pop) both;transform-origin:50% 100%;filter:drop-shadow(0 8px 6px rgba(0,0,0,.5))}
+@keyframes strike{0%{transform:translateY(120%) scale(.7)}35%{transform:translateY(-12px) scale(1.12) rotate(-4deg)}55%{transform:translateY(0) scale(1) rotate(5deg)}75%{transform:rotate(-3deg)}100%{transform:none}}
+.snake-wrap svg{animation:sway 1.2s ease-in-out .9s infinite alternate}
+@keyframes sway{from{transform:rotate(-3deg)}to{transform:rotate(3deg)}}
+.flash{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:radial-gradient(90% 70% at 50% 50%,rgba(224,36,58,0) 30%,rgba(224,36,58,.75) 100%)}
+.flash.on{animation:flash 1.1s ease-out}
+@keyframes flash{0%{opacity:1}100%{opacity:0}}
+.shake{animation:shake .5s}
+@keyframes shake{10%,90%{transform:translateX(-3px)}20%,80%{transform:translateX(6px)}30%,50%,70%{transform:translateX(-9px)}40%,60%{transform:translateX(9px)}}
+
+/* ── attente (suspense) ── */
+.hint{margin-bottom:auto;margin-top:18%;padding:10px 20px;border-radius:999px;background:rgba(18,6,28,.6);backdrop-filter:blur(6px);font-weight:800;font-size:18px;letter-spacing:.02em;animation:pulse 1.1s ease-in-out infinite alternate}
+.hint::after{content:"";display:inline-block;width:1.4em;text-align:left;animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.05)}}
+.rustle .fg{animation:rustle .28s ease-in-out infinite alternate}
+@keyframes rustle{from{transform:rotate(-1.6deg) scale(1.02)}to{transform:rotate(1.6deg) scale(1.02)}}
+.rustle .bg{animation:jitter .18s linear infinite alternate}
+@keyframes jitter{from{translate:-1px 0}to{translate:1px 1px}}
+
+.bobber{position:relative;width:120px;height:140px;margin-bottom:6px}
+.bobber .ripple{position:absolute;left:0;right:0;bottom:2px;opacity:.9;animation:ripple 1.4s ease-out infinite}
+.bobber .ripple:nth-child(2){animation-delay:.7s}
+@keyframes ripple{from{transform:scale(.3);opacity:.9}to{transform:scale(1.25);opacity:0}}
+.bobber .float{position:absolute;left:50%;bottom:16px;width:28px;margin-left:-14px;animation:bob 1s ease-in-out infinite alternate}
+.bobber .line{position:absolute;left:50%;bottom:44px;width:2px;height:260px;background:rgba(255,255,255,.7)}
+@keyframes bob{0%{transform:translateY(0)}60%{transform:translateY(4px)}100%{transform:translateY(-4px) rotate(4deg)}}
+.scene[data-state=busy] .float.tug{animation:tug .22s ease-in-out infinite alternate}
+@keyframes tug{from{transform:translateY(-3px)}to{transform:translateY(12px)}}
+
+/* ── poissons ── */
+.catches{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:8px}
+.catch{display:flex;align-items:center;gap:6px}
+.catch .tag{min-width:44px;text-align:center;font-weight:900;font-size:20px;color:var(--sun);text-shadow:0 2px 0 rgba(0,0,0,.5);opacity:0;animation:fade .3s both;animation-delay:calc(var(--d) * 1ms + 500ms)}
+.fi{width:84px;animation:leap .95s cubic-bezier(.3,.7,.4,1) both;animation-delay:calc(var(--d) * 1ms);filter:drop-shadow(0 6px 3px rgba(0,0,0,.4))}
+.fi svg{width:100%;height:auto}
+.fi.m svg{transform:scaleX(-1)}
+@keyframes leap{0%{transform:translateY(220px) rotate(-40deg) scale(.5);opacity:0}15%{opacity:1}45%{transform:translateY(-70px) rotate(-12deg) scale(1.1)}75%{transform:translateY(-6px) rotate(8deg)}100%{transform:none}}
+@keyframes fade{to{opacity:1}}
+.splash{width:210px;margin-top:-6px;opacity:.9}
+
+@media (max-height:700px){
+  .title{font-size:19px} .chip{height:46px} .cta{height:54px} .preview{min-height:34px;margin:6px 2px 10px} .gear{padding:7px 12px}
+  .pile{transform:scale(.8);transform-origin:bottom center;margin-bottom:-30px}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="rotate">Tourne ton téléphone en mode portrait 📱</div>
+{{sprite}}
+<main id="app" data-screen="home">
+
+  <!-- ═════ Accueil ═════ -->
+  <section id="home" class="screen active" aria-label="Accueil">
+    <h1 class="logo"><span>GALÉ</span><span>RAPAGOS</span></h1>
+    <div class="tagline">Bois &amp; poisson du naufragé</div>
+    <div class="cards">
+      <button class="card forest" data-go="forest" aria-label="Aller chercher du bois dans la jungle">
+        <svg class="art" viewBox="0 250 360 440" preserveAspectRatio="xMidYMid slice"><use href="#a-scene_jungle_bg" width="360" height="800"/></svg>
+        <div class="txt"><div><h2>La jungle</h2><p>Chercher du bois… si le serpent dort.</p></div>
+          <svg class="ico" viewBox="0 0 140 46"><use href="#a-plank" width="140" height="46"/></svg></div>
+      </button>
+      <button class="card sea" data-go="sea" aria-label="Aller pêcher en mer">
+        <svg class="art" viewBox="0 340 360 380" preserveAspectRatio="xMidYMid slice"><use href="#a-scene_sea_bg" width="360" height="800"/></svg>
+        <div class="txt"><div><h2>La mer</h2><p>Pêcher de quoi nourrir le camp.</p></div>
+          <svg class="ico" viewBox="0 0 110 64"><use href="#a-fish" width="110" height="64"/></svg></div>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═════ Jungle : bois ═════ -->
+  <section id="forest" class="screen scene" data-state="idle" aria-label="La jungle">
+    <svg class="art bg" viewBox="0 0 360 800" preserveAspectRatio="xMidYMid slice"><use href="#a-scene_jungle_bg" width="360" height="800"/></svg>
+    <svg class="art fg" viewBox="0 0 360 800" preserveAspectRatio="xMidYMid slice"><use href="#a-scene_jungle_fg" width="360" height="800"/></svg>
+    <div class="stage" id="forest-stage" aria-live="polite"></div>
+    <div class="flash" id="forest-flash"></div>
+    <div class="topbar"><button class="back" data-back aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">La jungle</div></div>
+    <div class="sheet" id="forest-sheet">
+      <div class="pane controls">
+        <button class="gear" id="axe-toggle" aria-pressed="false">
+          <svg class="ico" viewBox="0 0 64 64"><use href="#a-axe" width="64" height="64"/></svg>
+          <span><b>Hache</b><small>2 planches offertes au lieu d’1</small></span><i class="sw"></i>
+        </button>
+        <div class="lbl"><span>Planches en plus</span><em id="risk-txt"></em></div>
+        <div class="chips" role="radiogroup" aria-label="Nombre de planches supplémentaires"></div>
+        <div class="meter" aria-hidden="true"><i id="risk-bar"></i></div>
+        <p class="preview" id="wood-preview"></p>
+        <button class="cta" id="wood-go"></button>
+      </div>
+      <div class="pane result">
+        <div class="kicker" id="wood-kicker"></div>
+        <div class="big" id="wood-big"></div>
+        <p id="wood-sub"></p>
+        <button class="cta" id="wood-again">Repartir en forêt</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════ Mer : poisson ═════ -->
+  <section id="sea" class="screen scene" data-state="idle" aria-label="La mer">
+    <svg class="art bg" viewBox="0 0 360 800" preserveAspectRatio="xMidYMid slice"><use href="#a-scene_sea_bg" width="360" height="800"/></svg>
+    <svg class="art fg" viewBox="0 0 360 800" preserveAspectRatio="xMidYMid slice"><use href="#a-scene_sea_fg" width="360" height="800"/></svg>
+    <div class="stage" id="sea-stage" aria-live="polite"></div>
+    <div class="topbar"><button class="back" data-back aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><div class="title">La mer</div></div>
+    <div class="sheet" id="sea-sheet">
+      <div class="pane controls">
+        <button class="gear" id="rod-toggle" aria-pressed="false">
+          <svg class="ico" viewBox="0 0 64 64"><use href="#a-rod" width="64" height="64"/></svg>
+          <span><b>Canne à pêche</b><small>Deux prises au lieu d’une</small></span><i class="sw"></i>
+        </button>
+        <p class="preview" id="fish-preview" style="margin-top:16px"></p>
+        <button class="cta sea" id="fish-go">Lancer la ligne</button>
+      </div>
+      <div class="pane result">
+        <div class="kicker" id="fish-kicker"></div>
+        <div class="big" id="fish-big"></div>
+        <p id="fish-sub"></p>
+        <button class="cta sea" id="fish-again">Pêcher encore</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+'use strict';
+
+// <game-logic>
+/* Règles du tirage — voir README. Aucune bille n'est montrée au joueur : c'est un simple moteur de hasard. */
+const WOOD_BAG = ['ok', 'ok', 'ok', 'ok', 'ok', 'serpent']; // 6 tirages possibles, 1 seul est le serpent
+const FISH_BAG = [1, 1, 1, 2, 2, 3];                          // poissons par tirage : 3×1, 2×2, 1×3
+
+/** Entier uniforme dans [0, n) sans biais (crypto). */
+function randInt(n) {
+  const lim = Math.floor(0x100000000 / n) * n;
+  const a = new Uint32Array(1);
+  do { crypto.getRandomValues(a); } while (a[0] >= lim);
+  return a[0] % n;
+}
+function shuffle(list, rand = randInt) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = rand(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+/** Tire `count` éléments d'un coup, sans remise. */
+function drawFromBag(bag, count, rand = randInt) { return shuffle(bag, rand).slice(0, count); }
+
+/**
+ * Bois : 1 planche offerte (2 avec la hache). `extra` (0-5) = tirages de risque.
+ * Si le serpent sort dans les tirages : tout le bois est perdu, même la planche offerte.
+ */
+function gatherWood({ extra, axe }, rand = randInt) {
+  const free = axe ? 2 : 1;
+  extra = Math.max(0, Math.min(5, extra | 0));
+  const bitten = extra > 0 && drawFromBag(WOOD_BAG, extra, rand).includes('serpent');
+  return { free, extra, bitten, total: bitten ? 0 : free + extra };
+}
+const biteChance = (extra) => extra / WOOD_BAG.length;
+
+/** Pêche : 1 tirage (2 avec la canne, pris d'un coup). Le total est la somme des poissons. */
+function fishing({ rod }, rand = randInt) {
+  const catches = drawFromBag(FISH_BAG, rod ? 2 : 1, rand);
+  return { catches, total: catches.reduce((s, n) => s + n, 0) };
+}
+function fishStats(draws) { // min / max / moyenne théoriques
+  const mean = (FISH_BAG.reduce((s, n) => s + n, 0) / FISH_BAG.length) * draws;
+  const sorted = FISH_BAG.slice().sort((a, b) => a - b);
+  const min = sorted.slice(0, draws).reduce((s, n) => s + n, 0);
+  const max = sorted.slice(-draws).reduce((s, n) => s + n, 0);
+  return { min, max, mean };
+}
+// </game-logic>
+
+// ───────── outils UI ─────────
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pl = (n, w, plural = w + 's') => `${n} ${n > 1 ? plural : w}`;
+const vibrate = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch (_) {} };
+const VB = { plank: '0 0 140 46', fish: '0 0 110 64', snake: '0 0 190 210', ripple: '0 0 120 40', float: '0 0 28 40' };
+const art = (name, cls = '') =>
+  `<svg class="${cls}" viewBox="${VB[name]}"><use href="#a-${name}" width="${VB[name].split(' ')[2]}" height="${VB[name].split(' ')[3]}"/></svg>`;
+
+const app = $('#app');
+const screens = { home: $('#home'), forest: $('#forest'), sea: $('#sea') };
+
+// préférences mémorisées (facultatif : jamais bloquant)
+const prefs = { extra: 0, axe: false, rod: false };
+try { Object.assign(prefs, JSON.parse(localStorage.getItem('galerapagos') || '{}')); } catch (_) {}
+const savePrefs = () => { try { localStorage.setItem('galerapagos', JSON.stringify(prefs)); } catch (_) {} };
+
+// ───────── navigation (bouton retour Android compatible) ─────────
+let run = 0; // invalide les animations en cours quand on quitte un écran
+function setState(name, st) {
+  const el = screens[name];
+  el.dataset.state = st;
+  if (st === 'idle') { $('.stage', el).innerHTML = ''; el.classList.remove('rustle'); }
+}
+function show(name) {
+  run++;
+  for (const [k, el] of Object.entries(screens)) el.classList.toggle('active', k === name);
+  app.dataset.screen = name;
+  if (name !== 'home') setState(name, 'idle');
+  syncSheet();
+}
+function go(name) { history.pushState({ s: name }, '', '#' + name); show(name); }
+function back() {
+  if (history.state && history.state.s) history.back();
+  else { history.replaceState(null, '', location.pathname + location.search); show('home'); }
+}
+addEventListener('popstate', () => show((history.state && history.state.s) || 'home'));
+$$('[data-go]').forEach((b) => b.addEventListener('click', () => go(b.dataset.go)));
+$$('[data-back]').forEach((b) => b.addEventListener('click', back));
+{
+  const h = location.hash.slice(1);
+  if (h === 'forest' || h === 'sea') { history.replaceState({ s: h }, '', '#' + h); show(h); }
+}
+
+// la zone d'animation s'arrête au-dessus du panneau de commande
+const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(syncSheet) : null;
+function syncSheet() {
+  const active = app.dataset.screen;
+  if (active === 'home') return;
+  const sheet = $('#' + active + '-sheet');
+  app.style.setProperty('--sheet-h', sheet.offsetHeight + 'px');
+}
+if (ro) { ro.observe($('#forest-sheet')); ro.observe($('#sea-sheet')); }
+addEventListener('resize', syncSheet);
+
+// ═════════ JUNGLE ═════════
+const chips = $('#forest .chips');
+for (let n = 0; n <= 5; n++) {
+  chips.insertAdjacentHTML('beforeend',
+    `<button class="chip" role="radio" data-n="${n}" aria-checked="false">${n}${n === 0 ? '<small>prudent</small>' : ''}</button>`);
+}
+function renderForestControls() {
+  const { extra, axe } = prefs;
+  const free = axe ? 2 : 1;
+  $('#axe-toggle').setAttribute('aria-pressed', axe);
+  $$('.chip', chips).forEach((c) => c.setAttribute('aria-checked', +c.dataset.n === extra));
+  const pct = Math.round(biteChance(extra) * 100);
+  $('#risk-txt').textContent = extra ? `Risque de morsure : ${pct} %` : 'Aucun risque';
+  const bar = $('#risk-bar');
+  bar.style.width = (extra ? Math.max(pct, 6) : 0) + '%';
+  bar.style.setProperty('--bgw', (100 / Math.max(pct, 6)) * 100 + '%');
+  $('#wood-preview').textContent = extra
+    ? `Si tout va bien : ${free} + ${extra} = ${pl(free + extra, 'planche')}. Si le serpent frappe : rien, pas même la planche de départ.`
+    : `Tu ramasses ${pl(free, 'planche')} à la lisière. Sans danger.`;
+  $('#wood-go').textContent = extra ? 'S’enfoncer dans la jungle' : 'Ramasser en lisière';
+  syncSheet();
+}
+chips.addEventListener('click', (e) => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  prefs.extra = +c.dataset.n; savePrefs(); renderForestControls(); vibrate(8);
+});
+$('#axe-toggle').addEventListener('click', () => { prefs.axe = !prefs.axe; savePrefs(); renderForestControls(); vibrate(8); });
+
+async function runForest() {
+  const el = screens.forest;
+  if (el.dataset.state !== 'idle') return;
+  const my = ++run;
+  const opts = { extra: prefs.extra, axe: prefs.axe };
+  setState('forest', 'busy'); syncSheet();
+  const stage = $('#forest-stage');
+  stage.innerHTML = `<div class="hint">${opts.extra ? 'Tu t’enfonces dans la jungle' : 'Tu fouilles la lisière'}</div>`;
+  el.classList.add('rustle');
+  await sleep(reduced ? 200 : opts.extra ? 1100 + opts.extra * 380 : 800);
+  if (my !== run) return;
+  const r = gatherWood(opts);
+  el.classList.remove('rustle');
+  renderForestResult(r, opts);
+}
+function renderForestResult(r, opts) {
+  const el = screens.forest, stage = $('#forest-stage');
+  const big = $('#wood-big'), sub = $('#wood-sub');
+  if (r.bitten) {
+    stage.innerHTML = `<div class="snake-wrap">${art('snake')}</div>`;
+    const fl = $('#forest-flash'); fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on');
+    el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+    $('#wood-kicker').textContent = 'Un serpent !';
+    big.textContent = 'Mordu !'; big.className = 'big bad';
+    sub.textContent = `Le serpent t’a surpris : tu perds tout ton bois, même ${r.free > 1 ? 'les planches' : 'la planche'} de départ.`;
+    vibrate([220, 70, 220, 70, 320]);
+  } else {
+    const rots = [-3, 2.5, -1.5, 3, -2.5, 1.5, -2];
+    const dxs = [-8, 10, -4, 7, -10, 5, -3];
+    let html = '<div class="pile"><div class="shadow"></div>';
+    for (let i = 0; i < r.total; i++) {
+      html += `<div class="pl${i < r.free ? ' free' : ''}" style="--i:${i};--dx:${dxs[i]}px;--rot:${rots[i]}deg">${art('plank')}</div>`;
+    }
+    stage.innerHTML = html + '</div>';
+    $('#wood-kicker').textContent = r.extra ? 'Le serpent dormait' : 'Rien à craindre';
+    big.textContent = `+${pl(r.total, 'planche')}`; big.className = 'big';
+    sub.textContent = r.extra
+      ? `${pl(r.free, 'planche offerte', 'planches offertes')} + ${pl(r.extra, 'trouvée')} en risquant le coup.`
+      : `${pl(r.free, 'planche')} ramassée${r.free > 1 ? 's' : ''} à la lisière.`;
+    vibrate(r.extra ? [30, 40, 30] : 20);
+  }
+  setState('forest', 'result'); syncSheet();
+}
+$('#wood-go').addEventListener('click', runForest);
+$('#wood-again').addEventListener('click', () => { run++; setState('forest', 'idle'); syncSheet(); });
+
+// ═════════ MER ═════════
+function renderSeaControls() {
+  const { rod } = prefs;
+  $('#rod-toggle').setAttribute('aria-pressed', rod);
+  const st = fishStats(rod ? 2 : 1);
+  $('#fish-preview').textContent =
+    `${rod ? 'Tu lances deux fois la ligne' : 'Tu lances la ligne une fois'} : de ${pl(st.min, 'poisson')} à ${st.max}, ` +
+    `environ ${st.mean.toFixed(1).replace('.', ',')} en moyenne.`;
+  syncSheet();
+}
+$('#rod-toggle').addEventListener('click', () => { prefs.rod = !prefs.rod; savePrefs(); renderSeaControls(); vibrate(8); });
+
+async function runSea() {
+  const el = screens.sea;
+  if (el.dataset.state !== 'idle') return;
+  const my = ++run;
+  const opts = { rod: prefs.rod };
+  setState('sea', 'busy'); syncSheet();
+  $('#sea-stage').innerHTML =
+    `<div class="hint">La ligne frétille</div>
+     <div class="bobber"><div class="ripple">${art('ripple')}</div><div class="ripple">${art('ripple')}</div>
+       <div class="float tug">${art('float')}</div></div>`;
+  await sleep(reduced ? 200 : 1800);
+  if (my !== run) return;
+  renderSeaResult(fishing(opts), opts);
+}
+function renderSeaResult(r, opts) {
+  const { min, max } = fishStats(opts.rod ? 2 : 1);
+  const ratio = r.total / max;
+  const label = ratio <= 0.4 ? 'Pêche maigre' : ratio <= 0.8 ? 'Belle prise' : 'Pêche miraculeuse !';
+  let html = '<div class="catches">';
+  let d = 0;
+  r.catches.forEach((n, ci) => {
+    html += '<div class="catch">';
+    for (let i = 0; i < n; i++, d += 170) html += `<div class="fi${(i + ci) % 2 ? ' m' : ''}" style="--d:${d}">${art('fish')}</div>`;
+    html += opts.rod ? `<span class="tag" style="--d:${d}">+${n}</span>` : '';
+    html += '</div>';
+  });
+  html += `</div><svg class="splash" viewBox="${VB.ripple}"><use href="#a-ripple" width="120" height="40"/></svg>`;
+  $('#sea-stage').innerHTML = html;
+  $('#fish-kicker').textContent = label;
+  $('#fish-big').textContent = `+${pl(r.total, 'poisson')}`;
+  $('#fish-sub').textContent = opts.rod
+    ? `Deux prises avec la canne : ${r.catches.join(' + ')} = ${pl(r.total, 'poisson')}.`
+    : r.total === min ? 'Un seul poisson au bout de la ligne.' : `${pl(r.total, 'poisson')} au bout de la ligne.`;
+  vibrate(r.total * 12);
+  setState('sea', 'result'); syncSheet();
+}
+$('#fish-go').addEventListener('click', runSea);
+$('#fish-again').addEventListener('click', () => { run++; setState('sea', 'idle'); syncSheet(); });
+
+renderForestControls();
+renderSeaControls();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+package com.galerapagos.app.game
+
+import kotlin.random.Random
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class GameRulesTest {
+
+    @Test
+    fun `sans risque on garde la planche offerte`() {
+        repeat(1_000) {
+            assertEquals(1, GameRules.gatherWood(extra = 0, axe = false).total)
+            assertEquals(2, GameRules.gatherWood(extra = 0, axe = true).total)
+        }
+        assertFalse(GameRules.gatherWood(0, false).bitten)
+    }
+
+    @Test
+    fun `morsure perd tout, sinon planche offerte plus extra`() {
+        val random = Random(1)
+        repeat(5_000) {
+            val r = GameRules.gatherWood(extra = 3, axe = true, random = random)
+            if (r.bitten) assertEquals(0, r.total) else assertEquals(2 + 3, r.total)
+        }
+    }
+
+    @Test
+    fun `probabilite de morsure egale extra sur six`() {
+        val random = Random(42)
+        val trials = 60_000
+        for (extra in 1..5) {
+            val bites = (1..trials).count { GameRules.gatherWood(extra, axe = false, random = random).bitten }
+            assertEquals(extra / 6.0, bites.toDouble() / trials, 0.01)
+            assertEquals(extra / 6.0, GameRules.biteChance(extra), 1e-9)
+        }
+    }
+
+    @Test
+    fun `peche sans canne suit 3-2-1 sur six`() {
+        val random = Random(7)
+        val trials = 60_000
+        val counts = IntArray(4)
+        repeat(trials) { counts[GameRules.fish(rod = false, random = random).total]++ }
+        assertEquals(3 / 6.0, counts[1].toDouble() / trials, 0.01)
+        assertEquals(2 / 6.0, counts[2].toDouble() / trials, 0.01)
+        assertEquals(1 / 6.0, counts[3].toDouble() / trials, 0.01)
+    }
+
+    @Test
+    fun `canne prend deux tirages et additionne`() {
+        val random = Random(9)
+        repeat(5_000) {
+            val r = GameRules.fish(rod = true, random = random)
+            assertEquals(2, r.catches.size)
+            assertTrue(r.total in 2..5)
+        }
+    }
+
+    @Test
+    fun `statistiques de peche`() {
+        val one = GameRules.fishStats(1)
+        assertEquals(1, one.min)
+        assertEquals(3, one.max)
+        assertEquals(10.0 / 6.0, one.mean, 1e-9)
+        val two = GameRules.fishStats(2)
+        assertEquals(2, two.min)
+        assertEquals(5, two.max)
+        assertEquals(20.0 / 6.0, two.mean, 1e-9)
+    }
+}

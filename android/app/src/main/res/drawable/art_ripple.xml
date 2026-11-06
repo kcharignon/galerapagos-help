@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Généré par tools/svg2vd.js depuis art/*.svg — ne pas éditer à la main. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="120dp"
+    android:height="40dp"
+    android:viewportWidth="120"
+    android:viewportHeight="40">
+    <path
+        android:pathData="M4,20a56,15 0 1,0 112,0a56,15 0 1,0 -112,0z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeAlpha="0.8"/>
+    <path
+        android:pathData="M26,20a34,9 0 1,0 68,0a34,9 0 1,0 -68,0z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2"
+        android:strokeAlpha="0.8"/>
+    <path
+        android:pathData="M46,20a14,4 0 1,0 28,0a14,4 0 1,0 -28,0z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeAlpha="0.8"/>
+</vector>

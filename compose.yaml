@@ -1,0 +1,68 @@
+name: galerapagos
+
+services:
+  # Le site : http://localhost:8080 (WEB_PORT). L'APK, une fois construit par `make android`, est sur /galerapagos.apk.
+  web:
+    build:
+      context: .
+      target: prod
+    init: true
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - ./dist:/srv/dist:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/healthz"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # Tests des règles de tirage du site : `make test`.
+  test:
+    profiles: [test]
+    build:
+      context: .
+      target: test
+    init: true
+
+  # Régénère art/*.svg, les VectorDrawable Android et web/index.html depuis les sources : `make build`.
+  build:
+    profiles: [build]
+    build:
+      context: .
+      target: tools
+    init: true
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    volumes:
+      - .:/app
+    command: ["npm", "run", "build"]
+
+  # Application Android (android/) : `make android` (APK de débogage dans dist/) et `make android-test` (tests unitaires Kotlin).
+  # Image JDK 17 + SDK Android ; le cache de Gradle (et la clé de débogage, donc la signature de l'APK) vit dans le volume android-gradle.
+  android:
+    profiles: [android]
+    build:
+      context: ./android
+    init: true
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /work/android
+    volumes:
+      - ./android:/work/android
+      - ./dist:/work/dist
+      - android-gradle:/gradle
+    command: ["./build.sh", "apk"]
+
+  android-test:
+    profiles: [android]
+    build:
+      context: ./android
+    init: true
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /work/android
+    volumes:
+      - ./android:/work/android
+      - android-gradle:/gradle
+    command: ["./build.sh", "test"]
+
+volumes:
+  android-gradle:
