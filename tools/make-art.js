@@ -536,19 +536,27 @@ const stars = () => '';
 })();
 
 (function axe() {
-  // hache de la carte : manche brun-doré, fer gris-bleu évasé vers le tranchant, gros contour noir
+  // hache de la carte : fer en MÉTAL (bloc carré sur le manche, lame évasée au tranchant courbe, reflets d'acier),
+  // manche de bois, gros contour noir. Le fer est en bas à gauche, le manche monte vers le haut à droite.
   const s = new Svg('axe', 64, 64);
-  const steel = s.lin('steel', 0, 22, 0, 58, [
-    [0, '#e4ebf6'],
-    [1, '#8b98b2'],
+  const steel = s.lin('steel', 8, 30, 40, 62, [
+    [0, '#f4f8fd'],
+    [0.35, '#c4cddd'],
+    [0.7, '#93a0b8'],
+    [1, '#6d7a95'],
   ]);
-  // manche long qui part du fer vers le haut à droite
-  s.add(pth('M17 49C29 39 42 24 48 7L57 11C53 29 39 46 26 56Z', '#d08e36', { stroke: C.line, strokeWidth: 3.2, strokeLinejoin: 'round' }));
-  s.add(line('M28 44C38 35 46 23 51 12', '#f4bd68', 2.4, { opacity: 0.85 }));
-  // fer : bloc carré sur le manche, tranchant évasé vers le bas
-  s.add(pth('M4 44L19 37L31 46Q35 55 29 62Q17 60 8 57Z', steel, { stroke: C.line, strokeWidth: 3.2, strokeLinejoin: 'round' }));
-  s.add(pth('M6.6 44.2L19 38.6L22 41.6L9 47.6Z', '#f7faff', { opacity: 0.95 }));
-  s.add(line('M20 52L28 56', '#6b7892', 1.8, { opacity: 0.85 }));
+  // manche (derrière le fer)
+  s.add(line('M20 42C30 32 42 22 49 9', C.line, 10.5));
+  s.add(line('M20 42C30 32 42 22 49 9', '#d08e36', 6.8));
+  s.add(line('M23 39C32 30 43 21 48.5 11', '#f4bd68', 1.8, { opacity: 0.85 }));
+  // fer : poll carré (côté gauche), puis lame qui s'évase vers le tranchant courbe (en bas à droite)
+  s.add(pth('M6 42.6L16 30.2L26.1 38.3L37.3 43.3Q36 56 23.7 60.5L16.1 50.7Z', steel, { stroke: C.line, strokeWidth: 3.2, strokeLinejoin: 'round' }));
+  // collier : la jonction entre le bloc et la lame
+  s.add(line('M26.1 38.3L16.1 50.7', '#5f6c87', 1.8, { opacity: 0.85 }));
+  // reflets métalliques : dessus du poll et filet de lumière le long du tranchant
+  s.add(line('M8.4 41.6L15.6 32.4', '#ffffff', 2.4, { opacity: 0.95 }));
+  s.add(line('M34.6 45.6Q33.4 54.6 24.6 58.2', '#ffffff', 1.8, { opacity: 0.85 }));
+  s.add(line('M28.6 42.4L22.4 49.4', '#ffffff', 1.4, { opacity: 0.5 }));
   s.save();
 })();
 
