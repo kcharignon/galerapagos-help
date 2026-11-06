@@ -1,4 +1,6 @@
 version: 2
+# Aucune montée MAJEURE automatique, nulle part : la chaîne Android (JDK, Gradle, plugin Android, Kotlin, Compose) se monte d'un bloc,
+# à la main, en vérifiant que tout se construit ensemble. Dependabot ne propose que des montées mineures et correctives.
 updates:
   - package-ecosystem: github-actions
     directory: /
@@ -10,7 +12,10 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     labels: [dependencies]
-  # L'application Android (android/) : plugins et bibliothèques de Gradle, en une seule proposition à la fois.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  # L'application Android (android/) : plugins et bibliothèques de Gradle, une proposition à la fois.
   - package-ecosystem: gradle
     directory: /android
     schedule:
@@ -23,7 +28,6 @@ updates:
       prefix: "chore(deps)"
     labels: [dependencies]
     ignore:
-      # Les montées majeures (AGP, Kotlin, Compose) se font à la main : elles vont ensemble.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
@@ -33,6 +37,10 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     labels: [dependencies]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+  # L'image de construction Android : le JDK reste en 17 (celui que visent AGP 8 et Gradle 8).
   - package-ecosystem: docker
     directory: /android
     schedule:
@@ -40,3 +48,6 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     labels: [dependencies]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

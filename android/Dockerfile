@@ -6,8 +6,8 @@ FROM eclipse-temurin:17-jdk-jammy
 # « commandlinetools-linux-<n>_latest.zip » : numéro et empreinte du dépôt officiel de Google.
 ARG CMDLINE_TOOLS=16111833
 ARG CMDLINE_TOOLS_SHA256=0877a1d048fe4a24efe2eff536ca4223f7adeb58648bb81909d33c446918cfa8
-ARG ANDROID_PLATFORM=34
-ARG ANDROID_BUILD_TOOLS=34.0.0
+ARG ANDROID_PLATFORM=36
+ARG ANDROID_BUILD_TOOLS=36.0.0
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 

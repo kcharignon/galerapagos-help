@@ -69,6 +69,13 @@ Sans Docker :
 - Site : `node tools/build-web.js` régénère `web/index.html` ; ouvrir le fichier sur le téléphone (ou le servir en HTTPS).
 - Android : ouvrir `android/` dans **Android Studio** (JDK 17), laisser Gradle synchroniser, lancer sur un appareil. En ligne de commande : `cd android && ./gradlew assembleDebug` puis `./gradlew test`.
 
+## Versions et mises à jour
+
+Chaîne Android : JDK 17, Gradle 8.14, plugin Android 8.13, Kotlin 1.9.25 avec Compose compiler 1.5.15, Compose 1.7 (BOM 2025.03.01),
+`core-ktx` 1.17, `activity-compose` 1.11, `lifecycle` 2.9. **Dependabot ne propose aucune montée majeure** (`.github/dependabot.yml`) :
+passer à Kotlin 2 / plugin Android 9 / JDK 25 est un chantier à faire d'un bloc, à la main. Les bibliothèques plus récentes
+(`core-ktx` 1.18 et plus) exigent Kotlin 2.1 ou le plugin Android 9 et ne se construisent pas avec cette chaîne.
+
 ## Organisation du dépôt
 
 ```

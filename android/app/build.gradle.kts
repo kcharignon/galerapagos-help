@@ -16,7 +16,7 @@ val appVersionCode: Int = tagMatch?.destructured?.let { (x, y, z) -> x.toInt() *
 
 android {
     namespace = "com.galerapagos.app"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.galerapagos.app"
@@ -67,8 +67,8 @@ android {
         compose = true
     }
     composeOptions {
-        // Compose Compiler 1.5.14 <-> Kotlin 1.9.24
-        kotlinCompilerExtensionVersion = "1.5.14"
+        // Compose Compiler 1.5.15 <-> Kotlin 1.9.25
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     packaging {
         resources {
@@ -78,12 +78,12 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
+    val composeBom = platform("androidx.compose:compose-bom:2025.03.01")
     implementation(composeBom)
 
-    implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2")
-    implementation("androidx.activity:activity-compose:1.9.0")
+    implementation("androidx.core:core-ktx:1.17.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.3")
+    implementation("androidx.activity:activity-compose:1.11.0")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.foundation:foundation")
