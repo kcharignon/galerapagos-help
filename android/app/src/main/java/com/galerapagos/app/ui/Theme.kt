@@ -8,38 +8,44 @@ import android.os.VibratorManager
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 
-/** Palette tirée des SVG de /art (ciel d'orage violet, soleil, sable, mer turquoise). */
+/** Palette relevée sur les scans du jeu : ciel bleu-violet, sable pêche, lagon turquoise, jungle vive, bois et orange des marqueurs. */
 object Gx {
-    val Ink = Color(0xFF12061C)
-    val Plum = Color(0xFF2A0F3D)
-    val Violet = Color(0xFF4A2068)
-    val Magenta = Color(0xFFB23A7C)
-    val Coral = Color(0xFFF08A5D)
-    val Sun = Color(0xFFF9C97A)
-    val Sand = Color(0xFFF4D28F)
-    val Teal = Color(0xFF1F8A9B)
-    val Leaf = Color(0xFF58C24D)
-    val Danger = Color(0xFFE0243A)
-    val Paper = Color(0xFFFFF4DC)
+    val Ink = Color(0xFF173A40) // texte foncé (sarcelle) sur le sable
+    val Ink2 = Color(0xFF4B6F72)
+    val Night = Color(0xFF0B3138) // contour des gros titres blancs
+    val Paper = Color(0xFFFFF6E0)
+    val Sand = Color(0xFFF9DFB5)
+    val Sand2 = Color(0xFFF2C999)
+    val SandLine = Color(0xFFD9B98A)
+    val Wood = Color(0xFF8A5A3A)
+    val Teal = Color(0xFF2FC6CC)
+    val TealDeep = Color(0xFF17879F)
+    val Leaf = Color(0xFF3DBB4C)
+    val Orange = Color(0xFFF2842D)
+    val OrangeDeep = Color(0xFFD9611F)
+    val Red = Color(0xFFD8343F)
+    val Sun = Color(0xFFFFD36A)
+    val Sky = Color(0xFF5BB4EE)
+    val SkyTop = Color(0xFF2F8FE0)
 }
 
 @Composable
 fun GalerapagosTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = darkColorScheme(
-            primary = Gx.Sun,
-            background = Gx.Ink,
-            surface = Gx.Plum,
-            onBackground = Gx.Paper,
-            onSurface = Gx.Paper,
+        colorScheme = lightColorScheme(
+            primary = Gx.Orange,
+            background = Gx.Sand,
+            surface = Gx.Paper,
+            onBackground = Gx.Ink,
+            onSurface = Gx.Ink,
         ),
     ) {
-        Surface(modifier = Modifier.fillMaxSize(), color = Gx.Ink, contentColor = Gx.Paper, content = content)
+        Surface(modifier = Modifier.fillMaxSize(), color = Gx.SkyTop, contentColor = Gx.Ink, content = content)
     }
 }
 

@@ -20,6 +20,6 @@
         android:fillColor="#FFE0243A"/>
     <path
         android:pathData="M2,26a12,14 0 1,0 24,0a12,14 0 1,0 -24,0z"
-        android:strokeColor="#FF5A2F70"
-        android:strokeWidth="2"/>
+        android:strokeColor="#FF16181C"
+        android:strokeWidth="2.2"/>
 </vector>

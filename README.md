@@ -1,6 +1,6 @@
-# Galérapagos — compagnon bois & poisson
+# Galèrapagos — compagnon bois & poisson
 
-Appli perso pour le jeu de société **Galérapagos** (Gigamic). Elle remplace la pioche de billes dans le sac :
+Appli perso pour le jeu de société **Galèrapagos** (Gigamic). Elle remplace la pioche de billes dans le sac :
 le joueur choisit son risque, l'appli tire au hasard et montre le résultat dans le décor (jungle / mer).
 Aucune bille n'est affichée.
 
@@ -8,6 +8,10 @@ Aucune bille n'est affichée.
 - `android/` : appli **Kotlin / Jetpack Compose** (portrait, Android 8+).
 - `art/` : illustrations SVG originales, **source unique** du style graphique pour le web et pour Android.
 - `tools/` : scripts Node (aucune dépendance) qui génèrent les SVG, les VectorDrawable Android et la page web.
+
+## Graphismes
+
+Le style suit celui du jeu (relevé sur les scans de la boîte, du plateau et des cartes) : plein jour, ciel bleu-violet et gros nuages, sable pêche, lagon turquoise, jungle vert vif, objets cernés d'un trait noir (hache et canne à pêche des cartes), bois en rondins ficelés, poisson bleu à l'œil en croix, titres blancs cernés. Tout est **redessiné** dans `tools/make-art.js` : aucune image du jeu n'est dans le dépôt. Les scans servent de référence et restent dans `art/originals/`, ignoré par Git.
 
 ## Règles implémentées
 
@@ -31,6 +35,7 @@ make start         # construit et lance le site : http://localhost:8080  (WEB_PO
 make test          # tests des règles de tirage du site (Node, dans un conteneur)
 make android       # construit l'APK de débogage : dist/galerapagos-debug.apk, puis servi sur /galerapagos.apk
 make android-test  # tests unitaires Kotlin (JDK 17 + SDK Android dans un conteneur)
+make android-release-selftest  # prouve la chaîne de publication signée avec une clé jetable (android/PUBLICATION.md)
 make check         # tous les tests
 make build         # régénère les SVG, les drawables Android et web/index.html depuis les sources
 make help          # toutes les commandes
@@ -53,6 +58,21 @@ Le bouton retour Android et les choix (hache, canne, risque) sont gérés / mém
 Ouvrir le dossier `android/` dans **Android Studio** (JDK 17), laisser Gradle synchroniser, lancer sur un appareil.
 En ligne de commande : `cd android && ./gradlew assembleDebug` (SDK Android requis, `local.properties` créé par Android Studio).
 Tests unitaires des règles : `./gradlew test`.
+
+## GitHub : site, APK et versions
+
+Même chaîne que `repas-front`, à la taille de ce projet (détails et marche à suivre : [`android/PUBLICATION.md`](android/PUBLICATION.md)).
+
+| Workflow | Déclencheur | Ce qu'il fait |
+|---|---|---|
+| [`ci.yml`](.github/workflows/ci.yml) | push / PR | tests des règles du site, fichiers générés à jour (`make build` ne doit rien changer), image Docker servie et vérifiée |
+| [`android.yml`](.github/workflows/android.yml) | push / PR touchant `android/` ou `art/` ; à la main | tests Kotlin, APK de débogage (artefact), auto-test de la publication ; à la main sur `main` : pré-version `android-dev-<date>` |
+| [`android-release.yml`](.github/workflows/android-release.yml) | étiquette `android-vX.Y.Z` | APK **signé de ta clé**, contrôlé (certificat, version, permissions, non débogable), release GitHub + release roulante `android-latest` |
+| [`pages.yml`](.github/workflows/pages.yml) | push sur `main` touchant `web/`, `art/`, `tools/` | publie le site sur **GitHub Pages** (`https://<compte>.github.io/<dépôt>/`) |
+
+Le site affiche un lien « Installer l'appli Android » (APK de `android-latest`) quand il est servi par GitHub Pages ; l'adresse du dépôt se déduit de celle de la page.
+
+Une fois, à la main : créer la clé de signature, commiter son empreinte publique (`android/release-cert.sha256`), poser les 4 secrets, activer Pages. Puis `git tag android-v0.1.0 && git push origin android-v0.1.0` publie.
 
 ## Régénérer les illustrations
 

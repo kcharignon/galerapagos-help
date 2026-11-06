@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Compagnon Galérapagos : génération de la page (`tools`), tests (`test`), image de production (`prod`).
+# Compagnon Galèrapagos : génération de la page (`tools`), tests (`test`), image de production (`prod`).
 # Aucune dépendance npm : seuls les scripts de tools/ sont nécessaires.
 
 ARG NODE_VERSION=24

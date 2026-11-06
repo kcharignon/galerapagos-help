@@ -61,6 +61,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -80,6 +81,24 @@ fun Art(
         alignment = alignment,
         contentScale = contentScale,
     )
+}
+
+/** Gros titre blanc cerné d'un trait sombre, comme les titres des cartes du jeu (copies décalées, sans API texte expérimentale). */
+@Composable
+fun OutlinedText(
+    text: String,
+    fontSize: TextUnit,
+    modifier: Modifier = Modifier,
+    color: Color = Color.White,
+    outline: Color = Gx.Night,
+    textAlign: TextAlign? = null,
+) {
+    Box(modifier) {
+        for ((dx, dy) in listOf(-2 to 0, 2 to 0, 0 to -2, 0 to 3, -1 to -1, 1 to -1, -1 to 2, 1 to 2)) {
+            Text(text, Modifier.fillMaxWidth().offset(dx.dp, dy.dp), color = outline, fontSize = fontSize, fontWeight = FontWeight.Black, textAlign = textAlign)
+        }
+        Text(text, Modifier.fillMaxWidth(), color = color, fontSize = fontSize, fontWeight = FontWeight.Black, textAlign = textAlign)
+    }
 }
 
 /** Interpolation linéaire par morceaux : stops = (position 0..1, valeur). */
@@ -129,15 +148,15 @@ fun ChunkyButton(
 @Composable
 fun CtaButton(text: String, sea: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
     val face = if (sea) {
-        Brush.verticalGradient(listOf(Color(0xFF46C3C8), Color(0xFF1F7F9B)))
+        Brush.verticalGradient(listOf(Color(0xFF46D8DE), Gx.TealDeep))
     } else {
-        Brush.verticalGradient(listOf(Color(0xFFFF9A64), Color(0xFFD9457C)))
+        Brush.verticalGradient(listOf(Color(0xFFFFA24F), Gx.OrangeDeep))
     }
     ChunkyButton(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().height(66.dp),
         face = face,
-        shadow = if (sea) Color(0xFF0B4458) else Color(0xFF7A2250),
+        shadow = if (sea) Color(0xFF0A5A72) else Color(0xFF9A3F12),
         enabled = enabled,
     ) {
         Text(
@@ -162,9 +181,9 @@ fun GearToggle(
     enabled: Boolean = true,
     onToggle: () -> Unit,
 ) {
-    val border by animateColorAsState(if (checked) Gx.Sun else Color(0x24FFFFFF), label = "gearBorder")
-    val bg by animateColorAsState(if (checked) Color(0x29F9C97A) else Color(0x14FFFFFF), label = "gearBg")
-    val track by animateColorAsState(if (checked) Gx.Leaf else Color(0x2EFFFFFF), label = "gearTrack")
+    val border by animateColorAsState(if (checked) Gx.Leaf else Gx.SandLine, label = "gearBorder")
+    val bg by animateColorAsState(if (checked) Color(0x2E3DBB4C) else Color(0x99FFFFFF), label = "gearBg")
+    val track by animateColorAsState(if (checked) Gx.Leaf else Color(0x405A3A26), label = "gearTrack")
     val thumb by animateDpAsState(if (checked) 20.dp else 0.dp, spring(dampingRatio = 0.6f, stiffness = Spring.StiffnessMedium), label = "gearThumb")
     val shape = RoundedCornerShape(18.dp)
     Row(
@@ -181,7 +200,7 @@ fun GearToggle(
         Art(icon, Modifier.size(40.dp).alpha(if (checked) 1f else 0.55f))
         Column(Modifier.weight(1f)) {
             Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold)
-            Text(subtitle, fontSize = 13.sp, color = Gx.Paper.copy(alpha = 0.75f), lineHeight = 16.sp)
+            Text(subtitle, fontSize = 13.sp, color = Gx.Ink2, lineHeight = 16.sp)
         }
         Box(Modifier.size(50.dp, 30.dp).clip(RoundedCornerShape(15.dp)).background(track)) {
             Box(
@@ -208,8 +227,8 @@ fun TopBar(title: String, onBack: () -> Unit) {
             Modifier
                 .size(44.dp)
                 .clip(CircleShape)
-                .background(Color(0x8C12061C))
-                .border(2.dp, Color(0x40FFFFFF), CircleShape)
+                .background(Gx.Paper)
+                .border(3.dp, Color.White, CircleShape)
                 .clickable(onClick = onBack),
             contentAlignment = Alignment.Center,
         ) {
@@ -220,10 +239,10 @@ fun TopBar(title: String, onBack: () -> Unit) {
                     lineTo(w * 0.32f, w * 0.5f)
                     lineTo(w * 0.62f, w * 0.8f)
                 }
-                drawPath(path, Color.White, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                drawPath(path, Gx.Ink, style = Stroke(width = 3.4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
             }
         }
-        Text(title, fontSize = 22.sp, fontWeight = FontWeight.Black)
+        OutlinedText(title, fontSize = 23.sp)
     }
 }
 
@@ -235,8 +254,8 @@ fun Sheet(content: @Composable ColumnScope.() -> Unit) {
         Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(Color(0xE0280E3C), Color(0xF212061C))))
-            .border(2.dp, Brush.verticalGradient(listOf(Color(0x66F9C97A), Color.Transparent)), shape)
+            .background(Brush.verticalGradient(listOf(Color(0xFFFCEBC9), Color(0xFFF3D29F))))
+            .border(3.dp, Gx.Paper, shape)
             .navigationBarsPadding()
             .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 18.dp),
     ) {
@@ -245,7 +264,7 @@ fun Sheet(content: @Composable ColumnScope.() -> Unit) {
                 .align(Alignment.CenterHorizontally)
                 .padding(bottom = 12.dp)
                 .size(44.dp, 5.dp)
-                .background(Color(0x40FFFFFF), RoundedCornerShape(3.dp)),
+                .background(Color(0x4D5A3A26), RoundedCornerShape(3.dp)),
         )
         content()
     }
@@ -270,7 +289,8 @@ fun HintPill(text: String, modifier: Modifier = Modifier) {
     Box(
         modifier
             .graphicsLayer { scaleX = pulse; scaleY = pulse }
-            .background(Color(0x9912061C), RoundedCornerShape(50))
+            .background(Color(0xEBFFF6E0), RoundedCornerShape(50))
+            .border(2.dp, Color.White, RoundedCornerShape(50))
             .padding(horizontal = 20.dp, vertical = 10.dp),
     ) {
         Text(text + ".".repeat(dots), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
@@ -300,13 +320,13 @@ fun ResultPane(
             .padding(top = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(kicker.uppercase(), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp, color = Gx.Paper.copy(alpha = 0.8f), textAlign = TextAlign.Center)
+        Text(kicker.uppercase(), fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 2.sp, color = Gx.TealDeep, textAlign = TextAlign.Center)
         Text(
             big,
             modifier = Modifier.padding(top = 6.dp),
             fontSize = 44.sp,
             fontWeight = FontWeight.Black,
-            color = if (bad) Color(0xFFFF6B7D) else Gx.Sun,
+            color = if (bad) Gx.Red else Gx.OrangeDeep,
             textAlign = TextAlign.Center,
         )
         Text(
@@ -314,7 +334,8 @@ fun ResultPane(
             modifier = Modifier.padding(start = 6.dp, end = 6.dp, top = 10.dp, bottom = 16.dp),
             fontSize = 15.sp,
             lineHeight = 21.sp,
-            color = Gx.Paper.copy(alpha = 0.92f),
+            color = Gx.Ink2,
+            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
         )
         CtaButton(buttonLabel, sea = sea, onClick = onAgain)
@@ -337,7 +358,7 @@ fun SceneScaffold(
     stage: @Composable BoxScope.() -> Unit,
     sheet: @Composable ColumnScope.() -> Unit,
 ) {
-    Box(modifier.fillMaxSize().background(Gx.Ink)) {
+    Box(modifier.fillMaxSize().background(Gx.SkyTop)) {
         val bgScale by animateFloatAsState(if (busy) 1.06f else 1f, tween(2400), label = "bgScale")
         Art(
             bg,

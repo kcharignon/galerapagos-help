@@ -37,7 +37,8 @@ services:
       - .:/app
     command: ["npm", "run", "build"]
 
-  # Application Android (android/) : `make android` (APK de débogage dans dist/) et `make android-test` (tests unitaires Kotlin).
+  # Application Android (android/) : `make android` (APK de débogage dans dist/), `make android-test` (tests unitaires Kotlin),
+  # `make android-release` / `android-release-verify` / `android-release-selftest` (APK signé : android/PUBLICATION.md).
   # Image JDK 17 + SDK Android ; le cache de Gradle (et la clé de débogage, donc la signature de l'APK) vit dans le volume android-gradle.
   android:
     profiles: [android]
@@ -46,6 +47,16 @@ services:
     init: true
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     working_dir: /work/android
+    # Les variables sans valeur sont reprises de l'environnement de l'appelant (CI, terminal), jamais écrites ici :
+    # étiquette et code de version, clé de signature (secrets GitHub) et empreinte PUBLIQUE du certificat attendu.
+    environment:
+      - ANDROID_VERSION_TAG
+      - ANDROID_VERSION_CODE
+      - ANDROID_KEYSTORE_BASE64
+      - ANDROID_KEYSTORE_PASSWORD
+      - ANDROID_KEY_ALIAS
+      - ANDROID_KEY_PASSWORD
+      - ANDROID_EXPECTED_CERT_SHA256
     volumes:
       - ./android:/work/android
       - ./dist:/work/dist

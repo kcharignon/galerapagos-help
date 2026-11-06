@@ -1,7 +1,7 @@
 {
   "name": "galerapagos-compagnon",
   "private": true,
-  "description": "Compagnon Galérapagos : tirage du bois (jungle) et de la pêche (mer). Site mobile + appli Android.",
+  "description": "Compagnon Galèrapagos : tirage du bois (jungle) et de la pêche (mer). Site mobile + appli Android.",
   "scripts": {
     "art": "node tools/make-art.js",
     "android-art": "node tools/svg2vd.js",

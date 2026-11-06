@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Génère les illustrations SVG originales de l'appli dans /art.
- * Style : silhouettes sombres, palmiers magenta, plage sable, ciel d'orage
- * (inspiré de l'ambiance du jeu, sans reprendre aucun visuel de l'éditeur).
+ * Style relevé sur les scans du jeu : plein jour, très coloré (lagon turquoise, sable pêche, jungle vert vif sur fond sombre,
+ * ciel bleu-violet et gros nuages), objets cernés d'un trait noir épais, bois en rondins ficelés.
+ * Tout est redessiné ici : aucune image du jeu n'est reprise dans le dépôt.
  *
  * Contraintes volontaires (pour la conversion VectorDrawable Android) :
  *  - uniquement path / rect / circle / ellipse / g, dégradés en userSpaceOnUse
@@ -16,6 +17,22 @@ const path = require('path');
 const OUT = path.join(__dirname, '..', 'art');
 fs.mkdirSync(OUT, { recursive: true });
 
+// ───────────────────────── palette (relevée sur les scans) ─────────────────────────
+const C = {
+  line: '#16181c', // contour noir des objets
+  skyTop: '#2f8fe0', skyMid: '#5bb4ee', skyLow: '#a5dcf7', skyHaze: '#e6f7fd',
+  cloud: '#ffffff', cloudShade: '#c4d3f2',
+  storm: '#3d4160', stormLight: '#5a5f86',
+  rock: '#8d9bb5', rockLight: '#b9c6dc', rockShade: '#5c6a86',
+  jungleDeep: '#0f4a38', jungleMid: '#1b6a4c',
+  leafDark: '#177a38', leafMid: '#2ca848', leafBright: '#55cf55', leafLime: '#9be86a',
+  root: '#a39079', rootDark: '#6f5e4b',
+  sandTop: '#fdebc4', sandMid: '#f7d3a2', sandLow: '#ebb07a', sandWet: '#e0b088',
+  foam: '#ffffff', shallow: '#f3efb8',
+  turq: '#3fe0e0', turqLight: '#9bf0e8', lagoon: '#1fb0e0', deep: '#1480d0',
+  wood: '#b8672f', woodDark: '#7a3c18', woodLight: '#e39a58', rope: '#ead59f',
+};
+
 // ───────────────────────── utilitaires ─────────────────────────
 function rng(seed) {
   let s = seed >>> 0;
@@ -23,6 +40,7 @@ function rng(seed) {
 }
 const f = (n) => Math.round(n * 10) / 10;
 const rad = (deg) => (deg * Math.PI) / 180;
+const pick = (rnd, list) => list[Math.floor(rnd() * list.length)];
 
 class Svg {
   constructor(name, w, h) {
@@ -84,190 +102,260 @@ const line = (d, stroke, w, o) =>
 const group = (transform, ...kids) => `<g transform="${transform}">${kids.join('')}</g>`;
 
 // ───────────────────────── formes de décor ─────────────────────────
+/** Feuille pointue : base (x,y), direction ang (degrés, 0 = droite), longueur len, demi-largeur wid. */
+function leaf(x, y, angDeg, len, wid, color, o) {
+  const a = rad(angDeg);
+  const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
+  const tx = x + dx * len, ty = y + dy * len;
+  const mx = x + dx * len * 0.5, my = y + dy * len * 0.5;
+  return pth(
+    `M${f(x)} ${f(y)}Q${f(mx + nx * wid)} ${f(my + ny * wid)} ${f(tx)} ${f(ty)}Q${f(mx - nx * wid)} ${f(my - ny * wid)} ${f(x)} ${f(y)}Z`,
+    color,
+    o
+  );
+}
+
 /** Palme : lame courbe qui retombe. ang en degrés (0 = droite, -90 = haut). */
 function frond(tx, ty, angDeg, L, wd, color) {
   const a = rad(angDeg);
-  const dx = Math.cos(a);
-  const dy = Math.sin(a);
-  const nx = -dy;
-  const ny = dx;
-  const ex = tx + dx * L;
-  const ey = ty + dy * L + L * 0.42;
-  const cx = tx + dx * L * 0.5;
-  const cy = ty + dy * L * 0.5 - L * 0.28;
+  const dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
+  const ex = tx + dx * L, ey = ty + dy * L + L * 0.42;
+  const cx = tx + dx * L * 0.5, cy = ty + dy * L * 0.5 - L * 0.28;
   const u = [cx - nx * wd * 0.5, cy - ny * wd * 0.5];
   const l = [cx + nx * wd * 0.5, cy + ny * wd * 0.5];
   return pth(`M${f(tx)} ${f(ty)}Q${f(u[0])} ${f(u[1])} ${f(ex)} ${f(ey)}Q${f(l[0])} ${f(l[1])} ${f(tx)} ${f(ty)}Z`, color);
 }
 
-/** Palmier : tronc effilé + couronne. (x,y) = pied, lean = décalage horizontal du sommet. */
-function palm(x, y, h, lean, L, color, rnd, opts = {}) {
+/** Palmier coloré : tronc clair annelé, couronne à deux tons (sous-couche sombre, dessus vif). */
+function palm(x, y, h, lean, L, rnd, opts = {}) {
   const w = opts.trunk ?? Math.max(2.5, h * 0.045);
-  const tx = x + lean;
-  const ty = y - h;
-  const out = [];
+  const tx = x + lean, ty = y - h;
   const bend = opts.bend ?? lean * 0.15;
+  const dark = opts.dark ?? C.leafDark, bright = opts.bright ?? C.leafBright, lime = opts.lime ?? C.leafLime;
+  const out = [];
+  const cxm = x + lean * 0.1 + bend, cym = y - h * 0.5;
   out.push(
     pth(
-      `M${f(x - w)} ${f(y)}Q${f(x + lean * 0.1 - w * 0.6 + bend)} ${f(y - h * 0.5)} ${f(tx - w * 0.45)} ${f(ty)}` +
-        `L${f(tx + w * 0.45)} ${f(ty)}Q${f(x + lean * 0.1 + w * 0.6 + bend)} ${f(y - h * 0.5)} ${f(x + w)} ${f(y)}Z`,
-      color
+      `M${f(x - w)} ${f(y)}Q${f(cxm - w * 0.6)} ${f(cym)} ${f(tx - w * 0.45)} ${f(ty)}L${f(tx + w * 0.45)} ${f(ty)}Q${f(cxm + w * 0.6)} ${f(cym)} ${f(x + w)} ${f(y)}Z`,
+      opts.trunkColor ?? C.root
     )
   );
-  const angles = [-178, -152, -126, -100, -76, -52, -28, -4, 14, 166];
-  for (const a of angles) {
-    const len = L * (0.8 + rnd() * 0.4) * (a > 0 && a < 90 ? 0.8 : a > 90 ? 0.8 : 1);
-    out.push(frond(tx, ty, a + (rnd() - 0.5) * 14, len, L * 0.2, color));
+  // anneaux du tronc
+  if (opts.rings !== false) {
+    for (let t = 0.08; t < 0.95; t += 0.09) {
+      const px = (1 - t) * (1 - t) * x + 2 * (1 - t) * t * cxm + t * t * tx;
+      const py = (1 - t) * (1 - t) * y + 2 * (1 - t) * t * cym + t * t * ty;
+      const ww = w * (1 - t * 0.55);
+      out.push(line(`M${f(px - ww)} ${f(py)}L${f(px + ww)} ${f(py - 1.5)}`, C.rootDark, Math.max(0.8, w * 0.12), { opacity: 0.55 }));
+    }
   }
-  out.push(circle(tx - 3, ty + 5, w * 0.9 + 1, color), circle(tx + 4, ty + 6, w * 0.9 + 1, color));
+  const angles = [-178, -152, -126, -100, -76, -52, -28, -4, 14, 166];
+  for (const a of angles) out.push(frond(tx, ty, a + (rnd() - 0.5) * 14, L * (0.85 + rnd() * 0.35), L * 0.2, dark));
+  for (const a of angles) out.push(frond(tx, ty - 1.5, a + (rnd() - 0.5) * 10 + 4, L * (0.7 + rnd() * 0.3), L * 0.17, bright));
+  for (let i = 0; i < 4; i++) out.push(frond(tx, ty - 3, -150 + i * 32 + (rnd() - 0.5) * 12, L * 0.5, L * 0.1, lime));
+  out.push(circle(tx - 3, ty + 5, w * 0.9 + 1, C.rootDark), circle(tx + 4, ty + 6, w * 0.9 + 1, C.rootDark));
   return out.join('');
 }
 
-/** Buisson : grappe de cercles. */
-function bush(x0, x1, y, rMin, rMax, color, rnd, step = 14) {
+/** Feuillage éclairé d'en haut : feuilles éparpillées dans une bande, plus vives vers le haut. */
+function foliage(rnd, x0, x1, yTop, yBot, count, sizeMin = 9, sizeMax = 22) {
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    const x = x0 + rnd() * (x1 - x0);
+    const y = yTop + rnd() * (yBot - yTop);
+    const t = (y - yTop) / (yBot - yTop);
+    const r = rnd() + t * 0.9;
+    const color = r < 0.28 ? C.leafLime : r < 0.7 ? C.leafBright : r < 1.15 ? C.leafMid : C.leafDark;
+    out.push(leaf(x, y, -90 + (rnd() - 0.5) * 170, sizeMin + rnd() * (sizeMax - sizeMin), 3.6 + rnd() * 3.6, color));
+  }
+  return out.join('');
+}
+
+/** Massif de buissons : boules vert sombre, reflet plus clair en haut à gauche (lumière du ciel). */
+function bushes(rnd, x0, x1, yAt, rMin, rMax, step = 15) {
   const out = [];
   for (let x = x0; x <= x1; x += step * (0.6 + rnd() * 0.8)) {
     const r = rMin + rnd() * (rMax - rMin);
-    out.push(circle(x, y - r * 0.35 + (rnd() - 0.5) * 6, r, color));
+    const y = yAt(x) + (rnd() - 0.5) * 8;
+    out.push(circle(x, y, r, C.leafDark), circle(x - r * 0.18, y - r * 0.28, r * 0.72, C.leafMid), circle(x - r * 0.3, y - r * 0.45, r * 0.38, rnd() < 0.5 ? C.leafBright : C.leafLime, { opacity: 0.95 }));
   }
   return out.join('');
 }
 
-/** Échantillonne une courbe de Bézier cubique. */
-function bez(p0, p1, p2, p3, t) {
-  const m = 1 - t;
-  return [
-    m * m * m * p0[0] + 3 * m * m * t * p1[0] + 3 * m * t * t * p2[0] + t * t * t * p3[0],
-    m * m * m * p0[1] + 3 * m * m * t * p1[1] + 3 * m * t * t * p2[1] + t * t * t * p3[1],
-  ];
+/** Racine / liane : trait effilé tan-gris. */
+const root = (d, w) => line(d, C.root, w) + line(d, C.rootDark, Math.max(1, w * 0.22), { opacity: 0.55 });
+
+/** Touffe de lames pointues (agave / pandanus), sombres derrière, vives devant. */
+function spikes(x, y, n, L, rnd) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const a = -170 + (i / (n - 1)) * 160 + (rnd() - 0.5) * 10;
+    out.push(leaf(x, y, a, L * (0.75 + rnd() * 0.4), 2.3, i % 2 ? '#0b3d27' : C.leafDark));
+  }
+  for (let i = 0; i < n - 2; i++) {
+    const a = -160 + (i / (n - 3)) * 140 + (rnd() - 0.5) * 12;
+    out.push(leaf(x, y + 1, a, L * (0.5 + rnd() * 0.35), 2.1, i % 2 ? C.leafBright : C.leafMid));
+  }
+  return out.join('');
 }
 
-const stars = (svg, rnd, n, maxY) =>
-  Array.from({ length: n }, () => circle(rnd() * svg.w, rnd() * maxY, 0.5 + rnd() * 1.1, '#fff', { opacity: f(0.25 + rnd() * 0.6) })).join('');
+/** Rocher à facettes (sans contour, comme sur le plateau). */
+function rock(x, y, w, h) {
+  return (
+    pth(`M${f(x)} ${f(y)}L${f(x + w * 0.08)} ${f(y - h * 0.55)}L${f(x + w * 0.35)} ${f(y - h)}L${f(x + w * 0.72)} ${f(y - h * 0.86)}L${f(x + w)} ${f(y - h * 0.3)}L${f(x + w * 0.96)} ${f(y)}Z`, C.rock) +
+    pth(`M${f(x + w * 0.08)} ${f(y - h * 0.55)}L${f(x + w * 0.35)} ${f(y - h)}L${f(x + w * 0.5)} ${f(y - h * 0.62)}L${f(x + w * 0.3)} ${f(y - h * 0.3)}Z`, C.rockLight) +
+    pth(`M${f(x + w * 0.5)} ${f(y - h * 0.62)}L${f(x + w * 0.72)} ${f(y - h * 0.86)}L${f(x + w)} ${f(y - h * 0.3)}L${f(x + w * 0.96)} ${f(y)}L${f(x + w * 0.55)} ${f(y)}Z`, C.rockShade)
+  );
+}
+
+/** Nuage : cercles blancs, ventre bleuté. */
+function cloud(x, y, s, opacity = 1) {
+  const o = { opacity };
+  return (
+    ellipse(x, y + 10 * s, 60 * s, 11 * s, C.cloudShade, o) +
+    circle(x - 30 * s, y + 2 * s, 20 * s, C.cloud, o) +
+    circle(x, y - 10 * s, 28 * s, C.cloud, o) +
+    circle(x + 32 * s, y, 22 * s, C.cloud, o) +
+    circle(x + 54 * s, y + 6 * s, 14 * s, C.cloud, o) +
+    ellipse(x + 2 * s, y + 8 * s, 50 * s, 10 * s, C.cloud, o)
+  );
+}
+
+/** Perroquet vu de profil. */
+function parrot(x, y, s, body, wing) {
+  return group(
+    `translate(${f(x)} ${f(y)}) scale(${s})`,
+    pth('M-9 1Q-3 -6 6 -2L11 0L6 4Q-3 7 -9 1Z', body),
+    pth('M-3 -2Q-1 -13 9 -11Q5 -5 2 0Z', wing),
+    pth('M-9 1L-17 6L-14 1Z', wing),
+    circle(6.5, -1.6, 1.3, '#fff'),
+    circle(6.8, -1.6, 0.6, C.line),
+    pth('M10.5 -1L14 0.5L10.5 2Z', '#f5c24a')
+  );
+}
+
+/** Empreintes de pas le long d'une courbe de Bézier quadratique. */
+function footprints(p0, p1, p2, n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    const t = (i + 0.5) / n;
+    const x = (1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0];
+    const y = (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1];
+    const side = i % 2 ? 4 : -4;
+    out.push(ellipse(x + side, y, 2.6, 5.4, C.sandWet, { opacity: 0.55 }));
+  }
+  return out.join('');
+}
+
+/** Radeau / fagot de rondins ficelés, vu de dessus. */
+function raft(x, y, w, h, rnd) {
+  const out = [];
+  const n = Math.floor(h / 7);
+  for (let i = 0; i < n; i++) {
+    const yy = y + i * 7;
+    out.push(rect(x, yy, w, 6.2, i % 2 ? '#b0642c' : '#c47636', { rx: 3, stroke: C.woodDark, strokeWidth: 0.9 }));
+    out.push(line(`M${f(x + 4)} ${f(yy + 2)}L${f(x + w - 4)} ${f(yy + 2)}`, C.woodLight, 0.9, { opacity: 0.6 }));
+  }
+  for (const k of [0.18, 0.5, 0.82]) out.push(rect(x + w * k - 2, y - 2, 5, h + 4, C.rope, { rx: 2, stroke: '#8a6b34', strokeWidth: 0.8 }));
+  return out.join('');
+}
+
+const stars = () => '';
 
 // ═════════════════════════ SCÈNE JUNGLE (fond) ═════════════════════════
 (function jungleBg() {
   const s = new Svg('scene_jungle_bg', 360, 800);
-  const r = rng(7);
-  const sky = s.lin('sky', 0, 0, 0, 560, [
-    [0, '#150b2e'],
-    [0.35, '#4a2068'],
-    [0.66, '#b23a7c'],
-    [0.88, '#f08a5d'],
-    [1, '#f9c97a'],
+  const r = rng(11);
+  const sky = s.lin('sky', 0, 0, 0, 440, [
+    [0, C.skyTop],
+    [0.45, C.skyMid],
+    [0.8, C.skyLow],
+    [1, C.skyHaze],
   ]);
   s.add(rect(0, 0, 360, 800, sky));
-  s.add(stars(s, r, 46, 230));
-
-  // orage jaune-vert à droite (clin d'œil à la boîte), nuages sombres à gauche
-  const glow = s.rad('glow', 255, 410, 210, [
-    [0, '#fff0b0', 0.95],
-    [0.3, '#ffc56e', 0.55],
-    [1, '#ff8a5d', 0],
+  // nuages et orage au loin
+  const sun = s.rad('sun', 70, 58, 170, [
+    [0, '#ffffff', 0.95],
+    [0.22, '#fff6b0', 0.65],
+    [1, '#ffe27a', 0],
   ]);
-  s.add(circle(255, 410, 210, glow));
-  s.add(circle(255, 410, 34, '#fff2c0', { opacity: 0.95 }));
-  s.add(ellipse(300, 300, 90, 22, '#c9b95a', { opacity: 0.28 }), ellipse(325, 285, 60, 16, '#d6c768', { opacity: 0.25 }));
-  s.add(
-    ellipse(60, 170, 110, 26, '#2a1245', { opacity: 0.75 }),
-    ellipse(100, 150, 80, 22, '#34175a', { opacity: 0.7 }),
-    ellipse(20, 230, 90, 18, '#3a1a5c', { opacity: 0.6 }),
-    ellipse(230, 120, 70, 14, '#2a1245', { opacity: 0.55 })
-  );
-
-  // collines lointaines
-  s.add(pth('M0 470Q60 405 135 448T250 438T360 425L360 600L0 600Z', '#6a2a72'));
-  for (let i = 0; i < 8; i++) {
-    const x = 10 + i * 48 + r() * 20;
-    s.add(palm(x, 462 + r() * 14, 52 + r() * 36, (r() - 0.5) * 22, 30, '#4f1d66', r));
-  }
-  // ligne de jungle moyenne
-  s.add(pth('M0 505Q80 470 150 498T290 490T360 480L360 620L0 620Z', '#3b1752'));
-  s.add(bush(-10, 370, 520, 14, 26, '#33134a', r));
-  for (const [x, h, lean] of [
-    [70, 150, 18],
-    [148, 125, -16],
-    [250, 160, -20],
-    [322, 130, 14],
+  s.add(circle(70, 58, 170, sun), circle(70, 58, 27, '#fffbe2'));
+  s.add(cloud(70, 110, 1.2), cloud(250, 60, 1), cloud(300, 195, 0.9, 0.95), cloud(110, 235, 0.8, 0.9));
+  s.add(parrot(238, 150, 1.5, '#2aa4e0', '#1673b8'), parrot(262, 168, 1.3, '#f08a3c', '#d9561f'), parrot(222, 178, 1.2, '#2aa4e0', '#1673b8'));
+  // falaises grises derrière la jungle
+  s.add(pth('M-10 360L-10 250L40 215L75 240L120 200L165 170L205 205L250 185L300 225L370 205L370 380Z', C.rock));
+  s.add(pth('M40 215L75 240L70 330L35 300Z', C.rockLight), pth('M165 170L205 205L190 320L150 280Z', C.rockLight), pth('M250 185L300 225L285 330L245 290Z', C.rockLight));
+  s.add(pth('M75 240L120 200L125 340L95 330Z', C.rockShade, { opacity: 0.85 }), pth('M205 205L250 185L245 340L215 330Z', C.rockShade, { opacity: 0.85 }));
+  s.add(rect(-10, 300, 380, 60, '#bfe0f5', { opacity: 0.4 }));
+  // masse sombre de la jungle
+  const jungle = s.lin('jungle', 0, 270, 0, 520, [
+    [0, C.jungleMid],
+    [1, C.jungleDeep],
+  ]);
+  s.add(pth('M-10 330Q40 270 100 300T220 285T370 300L370 520L-10 520Z', jungle));
+  // racines et lianes claires dans l'ombre
+  for (const [x, y, dx, dy, w] of [
+    [40, 300, 60, 175, 6],
+    [120, 295, -40, 180, 5],
+    [200, 292, 70, 190, 7],
+    [270, 298, -30, 175, 5],
+    [330, 300, -70, 170, 6],
   ]) {
-    s.add(palm(x, 530, h, lean, 54, '#2a0f3d', r));
+    s.add(root(`M${x} ${y}Q${x + dx * 0.15} ${y + dy * 0.5} ${x + dx} ${y + dy}`, w));
   }
-  // grandes feuilles de sous-bois (jungle dense) : une rangée magenta, une rangée sombre
-  for (let i = 0; i < 12; i++) {
-    const x = 5 + i * 31 + r() * 14;
-    s.add(frond(x, 566, -90 + (r() - 0.5) * 120, 44 + r() * 26, 15, '#5a2272'));
-  }
-  for (let i = 0; i < 11; i++) {
-    const x = 15 + i * 33 + r() * 14;
-    s.add(frond(x, 584, -90 + (r() - 0.5) * 130, 40 + r() * 24, 14, '#2a0f3d'));
-  }
-  // lucioles
-  for (let i = 0; i < 16; i++) {
-    const x = 20 + r() * 320;
-    const y = 400 + r() * 190;
-    s.add(circle(x, y, 7, '#ffe27a', { opacity: 0.12 }), circle(x, y, 1.8, '#fff0a0', { opacity: 0.9 }));
-  }
-  // lisière sombre
-  s.add(pth('M0 585Q60 560 130 580T260 572T360 566L360 650L0 650Z', '#1d0b2b'));
-  s.add(bush(-10, 370, 596, 14, 24, '#1d0b2b', r, 12));
-  // fougères de la lisière
-  for (const x of [28, 96, 205, 290, 340]) {
-    s.add(frond(x, 600, -125, 32, 7, '#241035'), frond(x, 600, -90, 36, 7, '#241035'), frond(x, 600, -55, 32, 7, '#241035'));
-  }
-
-  // plage
-  const sand = s.lin('sand', 0, 600, 0, 800, [
-    [0, '#f4d28f'],
-    [0.45, '#dfa55e'],
-    [1, '#9c6636'],
+  s.add(line('M205 340Q216 346 205 356Q194 362 208 372', C.leafLime, 5), line('M205 340Q216 346 205 356Q194 362 208 372', C.leafDark, 1.4, { opacity: 0.6 }));
+  // feuillage vif : haut de la jungle, puis colonnes de feuilles
+  s.add(bushes(r, -10, 372, (x) => 318 - 20 * Math.sin(x / 55), 15, 26));
+  s.add(foliage(r, -5, 365, 285, 365, 200, 9, 20));
+  s.add(foliage(r, -5, 95, 340, 520, 130, 9, 20), foliage(r, 265, 365, 330, 520, 130, 9, 20));
+  s.add(spikes(120, 430, 11, 52, r), spikes(250, 445, 11, 56, r), spikes(185, 470, 9, 40, r));
+  s.add(bushes(r, -10, 372, () => 486, 14, 24, 13));
+  s.add(foliage(r, -5, 365, 455, 520, 100, 9, 18));
+  // rochers au bord de la plage
+  s.add(rock(-12, 505, 100, 78), rock(280, 505, 100, 90), rock(88, 505, 40, 26));
+  // plage pêche
+  const sand = s.lin('sand', 0, 480, 0, 800, [
+    [0, C.sandTop],
+    [0.4, C.sandMid],
+    [1, C.sandLow],
   ]);
-  s.add(pth('M0 618Q70 598 150 612T290 606T360 600L360 800L0 800Z', sand));
-  s.add(
-    ellipse(80, 660, 70, 8, '#ffe6ad', { opacity: 0.35 }),
-    ellipse(250, 690, 90, 9, '#ffe6ad', { opacity: 0.28 }),
-    ellipse(160, 735, 120, 10, '#7a4a25', { opacity: 0.25 })
-  );
-  // troncs échoués à la lisière
-  const log = (x, y, w, rot) =>
-    group(
-      `rotate(${rot} ${x} ${y})`,
-      rect(x - w / 2, y - 7, w, 14, '#6b3f1d', { rx: 7 }),
-      rect(x - w / 2 + 4, y - 5, w - 8, 4, '#8a5527', { rx: 2, opacity: 0.7 }),
-      ellipse(x + w / 2 - 3, y, 4, 6.5, '#c48a4c', { stroke: '#4a2a12', strokeWidth: 1.5 })
-    );
-  s.add(log(70, 640, 76, -6), log(105, 654, 60, 4), log(292, 648, 70, 8));
+  s.add(pth('M0 505Q70 485 150 498T290 492T360 488L360 800L0 800Z', sand));
+  s.add(ellipse(210, 560, 110, 14, '#fff3d4', { opacity: 0.55 }), ellipse(70, 640, 80, 10, '#fff3d4', { opacity: 0.4 }));
+  s.add(footprints([40, 770], [150, 650], [60, 560], 11));
+  // souche et hache plantée, rondins, corde
+  s.add(ellipse(100, 640, 26, 7, '#000', { opacity: 0.18 }), rect(78, 588, 44, 50, '#a85a28', { rx: 4 }), ellipse(100, 590, 22, 8, '#d9985a', { stroke: C.woodDark, strokeWidth: 1.5 }), ellipse(100, 590, 11, 3.5, 'none', { stroke: C.woodDark, strokeWidth: 1 }));
+  s.add(line('M240 600Q262 585 284 596T330 590', C.rope, 5), line('M236 612Q262 640 296 622', C.rope, 5));
+  s.add(raft(262, 640, 80, 22, r));
   s.save();
 })();
 
 // ═════════════════════════ SCÈNE JUNGLE (premier plan) ═════════════════════════
 (function jungleFg() {
   const s = new Svg('scene_jungle_fg', 360, 800);
-  const r = rng(21);
-  const dark = '#10051a';
-  // gros palmiers cadrant la scène
-  s.add(palm(-6, 760, 640, 92, 150, dark, r, { trunk: 15, bend: -34 }));
-  s.add(palm(372, 720, 590, -88, 140, dark, r, { trunk: 14, bend: 30 }));
+  const r = rng(23);
+  // gros palmiers vert vif qui cadrent la scène
+  s.add(palm(-6, 770, 640, 92, 150, r, { trunk: 15, bend: -34 }));
+  s.add(palm(372, 730, 600, -88, 140, r, { trunk: 14, bend: 30 }));
   // grandes feuilles qui pendent du haut
-  for (const [x, a, L] of [
-    [18, -40, 90],
-    [340, -140, 90],
-    [120, -62, 60],
-    [250, -118, 56],
+  for (const [x, a, L, c] of [
+    [18, 50, 90, C.leafDark],
+    [340, 130, 90, C.leafDark],
+    [120, 28, 60, C.leafMid],
+    [250, 152, 56, C.leafMid],
   ]) {
-    s.add(frond(x, -6, a + 90, L, 20, dark));
+    s.add(frond(x, -6, a, L, 20, c));
   }
-  // lianes
   for (const [x, len, sw] of [
     [62, 130, 2.5],
     [96, 90, 2],
     [268, 110, 2.5],
     [300, 150, 2],
   ]) {
-    s.add(line(`M${x} -4Q${x + 8} ${len * 0.5} ${x - 4} ${len}`, dark, sw));
+    s.add(line(`M${x} -4Q${x + 8} ${len * 0.5} ${x - 4} ${len}`, C.leafDark, sw));
   }
-  // herbes en bas des coins
+  // herbes dans les coins du bas
   for (const x of [8, 30, 330, 352]) {
-    s.add(frond(x, 800, -105, 60, 12, dark), frond(x, 800, -75, 66, 12, dark), frond(x, 800, -135, 50, 10, dark));
+    s.add(frond(x, 800, -105, 60, 12, C.leafBright), frond(x, 800, -75, 66, 12, C.leafMid), frond(x, 800, -135, 50, 10, C.leafLime));
   }
   s.save();
 })();
@@ -275,208 +363,208 @@ const stars = (svg, rnd, n, maxY) =>
 // ═════════════════════════ SCÈNE MER (fond) ═════════════════════════
 (function seaBg() {
   const s = new Svg('scene_sea_bg', 360, 800);
-  const r = rng(33);
-  const sky = s.lin('sky', 0, 0, 0, 410, [
-    [0, '#1a1048'],
-    [0.38, '#6a2b86'],
-    [0.7, '#d9507c'],
-    [0.9, '#ff9f60'],
-    [1, '#ffd68a'],
+  const r = rng(37);
+  const sky = s.lin('sky', 0, 0, 0, 400, [
+    [0, C.skyTop],
+    [0.5, C.skyMid],
+    [0.85, C.skyLow],
+    [1, C.skyHaze],
   ]);
   s.add(rect(0, 0, 360, 800, sky));
-  s.add(stars(s, r, 40, 200));
-  const glow = s.rad('glow', 180, 410, 230, [
-    [0, '#fff0b0', 0.95],
-    [0.3, '#ffc56e', 0.5],
-    [1, '#ff8a5d', 0],
+  // orage sombre à gauche, gros nuages blancs
+  const sun = s.rad('sun', 280, 70, 170, [
+    [0, '#ffffff', 0.95],
+    [0.22, '#fff6b0', 0.65],
+    [1, '#ffe27a', 0],
   ]);
-  s.add(circle(180, 410, 230, glow));
-  s.add(circle(180, 405, 46, '#fff3c4'));
-  s.add(
-    ellipse(290, 150, 100, 22, '#2d1450', { opacity: 0.7 }),
-    ellipse(320, 130, 70, 16, '#3a1a5e', { opacity: 0.6 }),
-    ellipse(50, 250, 90, 16, '#c9b95a', { opacity: 0.22 }),
-    ellipse(70, 110, 80, 14, '#4a2068', { opacity: 0.55 })
-  );
-  // mer
-  const sea = s.lin('sea', 0, 408, 0, 690, [
-    [0, '#f19a73'],
-    [0.14, '#c2587f'],
-    [0.32, '#2f8a9b'],
-    [1, '#073a4e'],
+  s.add(circle(280, 70, 170, sun), circle(280, 70, 27, '#fffbe2'));
+  s.add(cloud(240, 90, 1.3), cloud(120, 150, 1), cloud(300, 250, 1.2, 0.95), cloud(190, 330, 1.1, 0.9));
+  s.add(parrot(150, 110, 1.4, '#2aa4e0', '#1673b8'), parrot(176, 128, 1.2, '#f08a3c', '#d9561f'), parrot(132, 140, 1.1, '#2aa4e0', '#1673b8'));
+  // mer lointaine puis lagon
+  const far = s.lin('far', 0, 380, 0, 420, [
+    [0, '#7cc4f2'],
+    [1, C.deep],
   ]);
-  s.add(rect(0, 408, 360, 300, sea));
-  // reflet du soleil
-  for (let i = 0; i < 9; i++) {
-    const y = 412 + i * 17 + i * i * 0.9;
-    const w = 40 + i * 14 + r() * 20;
-    s.add(rect(180 - w / 2 + (r() - 0.5) * 10, y, w, 3 + i * 0.35, '#ffe9a0', { rx: 2, opacity: f(0.75 - i * 0.07) }));
+  s.add(rect(0, 380, 360, 50, far));
+  const lagoon = s.lin('lagoon', 0, 420, 0, 640, [
+    [0, C.deep],
+    [0.18, C.lagoon],
+    [0.5, C.turq],
+    [0.8, C.turqLight],
+    [1, C.shallow],
+  ]);
+  s.add(rect(0, 420, 360, 240, lagoon));
+  // bancs de sable crème dans le lagon, reflets, écume
+  s.add(pth('M360 520Q300 520 260 560T150 600Q60 610 0 590L0 660L360 660Z', C.shallow, { opacity: 0.85 }));
+  s.add(pth('M0 470Q60 480 110 462T220 470Q300 480 360 462L360 480Q300 495 220 486T110 480Q60 494 0 486Z', '#ffffff', { opacity: 0.25 }));
+  for (let i = 0; i < 12; i++) {
+    const y = 440 + i * 16 + r() * 8;
+    const x = r() * 330;
+    s.add(line(`M${f(x)} ${f(y)}q10 -4 20 0t20 0`, '#fff', 1.6, { opacity: f(0.18 + r() * 0.2) }));
   }
-  // île lointaine + petit radeau
-  s.add(pth('M-4 410Q20 388 52 396Q80 380 112 410Z', '#3a1650', { opacity: 0.9 }));
-  s.add(palm(60, 398, 30, 5, 15, '#3a1650', r), palm(86, 402, 24, -4, 13, '#3a1650', r));
-  s.add(
-    rect(262, 428, 34, 4, '#2a1245'),
-    line('M279 428L279 408', '#2a1245', 2),
-    pth('M279 410L292 424L279 424Z', '#2a1245')
-  );
-  // vagues
-  const wave = (y, amp, a) => {
-    let d = `M-10 ${y}`;
-    for (let x = -10; x < 380; x += 40) d += `q10 ${-amp} 20 0t20 0`;
-    return line(d, '#fff', 1.6, { opacity: a });
-  };
-  for (let i = 0; i < 9; i++) s.add(group(`translate(${f((r() - 0.5) * 30)} ${f(448 + i * 24 + i * i * 1.2)})`, wave(0, 4 + i * 0.5, f(0.1 + i * 0.03))));
-  // plage
+  // îlots rocheux et rochers dans l'eau
+  s.add(rock(-20, 432, 120, 62), rock(268, 428, 110, 54), rock(120, 430, 40, 20));
+  s.add(rock(190, 575, 26, 18), rock(230, 590, 20, 12), rock(40, 560, 24, 14));
+  // plage pêche
   const sand = s.lin('sand', 0, 640, 0, 800, [
-    [0, '#f0cf8e'],
-    [0.5, '#dba35c'],
-    [1, '#9a6535'],
+    [0, C.sandTop],
+    [0.5, C.sandMid],
+    [1, C.sandLow],
   ]);
-  s.add(pth('M0 660Q60 630 140 648T270 640T360 632L360 800L0 800Z', '#b98a55'));
-  s.add(pth('M0 678Q70 652 150 668T290 660T360 654L360 800L0 800Z', sand));
-  // écume
+  s.add(pth('M0 650Q60 628 140 642T270 636T360 628L360 800L0 800Z', C.sandWet));
+  s.add(pth('M0 668Q70 646 150 660T290 654T360 648L360 800L0 800Z', sand));
   s.add(
-    line('M-4 658Q60 626 140 644T270 636T364 628', '#fff', 5, { opacity: 0.55 }),
-    line('M-4 650Q60 620 140 637T270 629T364 621', '#fff', 2.5, { opacity: 0.4 })
+    line('M-4 648Q60 624 140 640T270 634T364 626', '#fff', 5, { opacity: 0.8 }),
+    line('M-4 640Q60 616 140 632T270 626T364 618', '#fff', 2.5, { opacity: 0.55 })
   );
-  s.add(ellipse(110, 720, 90, 9, '#ffe6ad', { opacity: 0.3 }), ellipse(260, 752, 100, 10, '#7a4a25', { opacity: 0.25 }));
-  // rochers
-  for (const [x, y, rx, ry] of [
-    [300, 690, 34, 20],
-    [334, 702, 22, 14],
-    [40, 700, 26, 15],
-  ]) {
-    s.add(ellipse(x, y, rx, ry, '#3a1a4c'), ellipse(x - rx * 0.25, y - ry * 0.35, rx * 0.5, ry * 0.4, '#5a2f70', { opacity: 0.8 }));
-  }
+  s.add(ellipse(110, 720, 90, 9, '#fff3d4', { opacity: 0.45 }));
+  s.add(footprints([300, 780], [180, 720], [90, 690], 8));
   s.save();
 })();
 
 // ═════════════════════════ SCÈNE MER (premier plan) ═════════════════════════
 (function seaFg() {
   const s = new Svg('scene_sea_fg', 360, 800);
-  const r = rng(45);
-  const dark = '#10051a';
-  s.add(palm(-10, 780, 600, 110, 150, dark, r, { trunk: 15, bend: -30 }));
-  for (const [x, a, L] of [
-    [350, -150, 100],
-    [300, -125, 70],
-    [200, -80, 40],
+  const r = rng(49);
+  s.add(palm(-10, 790, 600, 110, 150, r, { trunk: 15, bend: -30 }));
+  for (const [x, a, L, c] of [
+    [350, 135, 100, C.leafDark],
+    [300, 150, 70, C.leafMid],
+    [200, 95, 40, C.leafDark],
   ]) {
-    s.add(frond(x, -6, a + 90, L, 22, dark));
+    s.add(frond(x, -6, a, L, 22, c));
   }
+  s.add(frond(350, -6, 150, 70, 16, C.leafBright));
   for (const [x, len] of [
     [300, 110],
     [330, 70],
   ]) {
-    s.add(line(`M${x} -4Q${x + 8} ${len * 0.5} ${x - 4} ${len}`, dark, 2.2));
+    s.add(line(`M${x} -4Q${x + 8} ${len * 0.5} ${x - 4} ${len}`, C.leafDark, 2.2));
   }
-  for (const x of [340, 358]) s.add(frond(x, 800, -100, 56, 12, dark), frond(x, 800, -130, 46, 10, dark));
+  for (const x of [340, 358]) s.add(frond(x, 800, -100, 56, 12, C.leafBright), frond(x, 800, -130, 46, 10, C.leafMid));
   s.save();
 })();
 
-// ═════════════════════════ OBJETS ═════════════════════════
+// ═════════════════════════ OBJETS (traits noirs épais, comme sur les cartes) ═════════════════════════
 (function plank() {
-  const s = new Svg('plank', 140, 46);
-  s.add(rect(3, 3, 134, 40, '#c78a4a', { rx: 6, stroke: '#5e3515', strokeWidth: 3 }));
-  s.add(rect(7, 6, 126, 10, '#e5ad6c', { rx: 4, opacity: 0.65 }));
+  // rondin long ficelé : le bois du jeu, ce sont de longs morceaux de bois ronds liés par une corde
+  const s = new Svg('plank', 220, 40);
+  const body = s.lin('body', 0, 5, 0, 35, [
+    [0, '#d98a47'],
+    [0.45, C.wood],
+    [1, C.woodDark],
+  ]);
+  s.add(rect(6, 5, 196, 30, body, { rx: 15, stroke: C.line, strokeWidth: 3 }));
+  s.add(rect(24, 9, 160, 6, C.woodLight, { rx: 3, opacity: 0.75 }));
   s.add(
-    line('M14 23Q50 19 90 25T130 23', '#8a5527', 1.8, { opacity: 0.85 }),
-    line('M10 33Q40 37 80 32T128 35', '#8a5527', 1.8, { opacity: 0.85 }),
-    ellipse(98, 21, 6, 3.4, 'none', { stroke: '#8a5527', strokeWidth: 1.6 })
+    line('M44 22Q92 19 140 23', C.woodDark, 1.6, { opacity: 0.7 }),
+    line('M64 30Q116 28 176 31', C.woodDark, 1.6, { opacity: 0.7 }),
+    line('M100 17l4 -2', C.woodDark, 1.4, { opacity: 0.7 }),
+    line('M18 24l6 -1', C.woodDark, 1.4, { opacity: 0.7 })
   );
-  for (const [x, y] of [
-    [14, 14],
-    [126, 14],
-    [14, 34],
-    [126, 34],
-  ])
-    s.add(circle(x, y, 2.6, '#3b2412'), circle(x - 0.7, y - 0.7, 0.9, '#a98a6a'));
+  // bout coupé
+  s.add(ellipse(204, 20, 10, 15, '#edc488', { stroke: C.line, strokeWidth: 3 }));
+  s.add(ellipse(204, 20, 6.5, 10, 'none', { stroke: '#b9803f', strokeWidth: 1.6 }), ellipse(204, 20, 3, 4.5, 'none', { stroke: '#b9803f', strokeWidth: 1.4 }));
+  // deux liens de corde
+  for (const x of [34, 150]) {
+    s.add(rect(x, 3, 6, 34, C.rope, { rx: 3, stroke: '#7b5a26', strokeWidth: 1.6 }), rect(x + 10, 3, 6, 34, C.rope, { rx: 3, stroke: '#7b5a26', strokeWidth: 1.6 }));
+    s.add(line(`M${x} 11L${x + 6} 16M${x + 10} 11L${x + 16} 16M${x} 25L${x + 6} 30M${x + 10} 25L${x + 16} 30`, '#a07f3d', 1.3));
+  }
   s.save();
 })();
 
 (function fish() {
+  // poisson rouge, bouche pleine de dents, œil en croix
   const s = new Svg('fish', 110, 64);
-  const line1 = '#7a2a10';
-  s.add(pth('M24 32L4 9Q13 32 4 55Z', '#e8662f', { stroke: line1, strokeWidth: 3, strokeLinejoin: 'round' }));
-  s.add(pth('M44 16Q58 -1 76 13Q60 12 44 16Z', '#e8662f', { stroke: line1, strokeWidth: 2.5, strokeLinejoin: 'round' }));
-  s.add(pth('M44 50Q54 62 68 52Q56 50 44 50Z', '#e8662f', { stroke: line1, strokeWidth: 2.5, strokeLinejoin: 'round' }));
-  s.add(pth('M20 32Q40 4 76 12Q104 20 106 32Q104 46 76 54Q40 60 20 32Z', '#ff8a4c', { stroke: line1, strokeWidth: 3 }));
-  s.add(pth('M32 37Q62 53 100 38Q104 44 76 52Q46 56 32 37Z', '#ffd8b0', { opacity: 0.92 }));
+  const body = s.lin('body', 0, 10, 0, 56, [
+    [0, '#ff7a63'],
+    [1, '#d62f3c'],
+  ]);
+  const fin = '#c42533';
+  s.add(pth('M24 32L4 9Q13 32 4 55Z', fin, { stroke: C.line, strokeWidth: 3, strokeLinejoin: 'round' }));
+  s.add(pth('M44 16Q58 -1 76 13Q60 12 44 16Z', fin, { stroke: C.line, strokeWidth: 2.6, strokeLinejoin: 'round' }));
+  s.add(pth('M44 50Q54 62 68 52Q56 50 44 50Z', fin, { stroke: C.line, strokeWidth: 2.6, strokeLinejoin: 'round' }));
+  s.add(pth('M20 32Q40 4 76 12Q104 20 106 32Q104 46 76 54Q40 60 20 32Z', body, { stroke: C.line, strokeWidth: 3 }));
+  s.add(pth('M32 37Q62 53 100 38Q104 44 76 52Q46 56 32 37Z', '#ffd9d0', { opacity: 0.95 }));
   s.add(
-    line('M52 17Q58 32 52 49', line1, 2.4, { opacity: 0.45 }),
-    line('M62 14Q68 32 62 52', line1, 2.4, { opacity: 0.45 }),
-    line('M72 22Q66 32 72 45', line1, 2.6),
-    line('M105 33Q100 36 96 34', line1, 2.2)
+    line('M52 17Q58 32 52 49', '#8a1824', 2.4, { opacity: 0.4 }),
+    line('M62 14Q68 32 62 52', '#8a1824', 2.4, { opacity: 0.4 }),
+    line('M72 22Q66 32 72 45', C.line, 2.6)
   );
-  s.add(circle(89, 27, 6.5, '#fff', { stroke: line1, strokeWidth: 2 }), circle(91, 27.5, 3.2, '#1b0b2e'), circle(92.2, 26.3, 1.1, '#fff'));
+  // gueule ouverte et dents
+  s.add(pth('M106 32Q96 26 88 36Q98 42 106 36Z', '#5b1a2a', { stroke: C.line, strokeWidth: 2 }));
+  s.add(pth('M102 30L99 35L96 30ZM96 29L93 35L90 31Z', '#fff'));
+  // œil en croix
+  s.add(circle(88, 25, 6.5, '#fff', { stroke: C.line, strokeWidth: 2 }));
+  s.add(line('M85 22L91 28M91 22L85 28', C.line, 2));
   s.save();
 })();
 
 (function snake() {
   const s = new Svg('snake', 190, 210);
-  const P = [
-    [34, 192],
-    [0, 150],
-    [66, 128],
-    [104, 142],
-  ];
-  const Q = [
-    [104, 142],
-    [156, 156],
-    [168, 104],
-    [118, 92],
-  ];
-  const R = [
-    [118, 92],
-    [66, 82],
-    [52, 48],
-    [100, 40],
-  ];
+  const P = [[34, 192], [0, 150], [66, 128], [104, 142]];
+  const Q = [[104, 142], [156, 156], [168, 104], [118, 92]];
+  const R = [[118, 92], [66, 82], [52, 48], [100, 40]];
   const d = `M${P[0]}C${P[1]} ${P[2]} ${P[3]}C${Q[1]} ${Q[2]} ${Q[3]}C${R[1]} ${R[2]} ${R[3]}`;
-  s.add(line(d, '#17401f', 30));
-  s.add(line(d, '#58c24d', 21));
-  s.add(line(d, '#9be072', 6, { opacity: 0.55 }));
-  // taches
+  s.add(line(d, C.line, 31));
+  s.add(line(d, '#2f9e3c', 22));
+  s.add(line(d, '#7ad65a', 9, { opacity: 0.8 }));
   for (const seg of [P, Q, R]) {
     for (let t = 0.14; t < 1; t += 0.2) {
-      const [x, y] = bez(seg[0], seg[1], seg[2], seg[3], t);
-      s.add(circle(x, y, 4.4, '#2c7a35'));
+      const m = 1 - t;
+      const x = m * m * m * seg[0][0] + 3 * m * m * t * seg[1][0] + 3 * m * t * t * seg[2][0] + t * t * t * seg[3][0];
+      const y = m * m * m * seg[0][1] + 3 * m * m * t * seg[1][1] + 3 * m * t * t * seg[2][1] + t * t * t * seg[3][1];
+      s.add(circle(x, y, 4.6, '#1b6e2a'));
     }
   }
-  // tête orientée selon la tangente de fin
   const ang = (Math.atan2(R[3][1] - R[2][1], R[3][0] - R[2][0]) * 180) / Math.PI;
   const head = [
-    // langue fourchue
     line('M24 0L46 0M46 0L56 -6M46 0L56 6', '#e0243a', 3),
-    pth('M-10 -15Q14 -22 30 -6Q34 0 30 6Q14 22 -10 15Q-16 0 -10 -15Z', '#58c24d', { stroke: '#17401f', strokeWidth: 3 }),
+    pth('M-10 -15Q14 -22 30 -6Q34 0 30 6Q14 22 -10 15Q-16 0 -10 -15Z', '#2f9e3c', { stroke: C.line, strokeWidth: 3 }),
+    pth('M-4 -10Q10 -13 22 -3Q10 -6 -4 -6Z', '#7ad65a', { opacity: 0.8 }),
     pth('M20 -2L24 6L28 -2Z', '#fff'),
-    circle(6, -9, 5.5, '#ffe14a', { stroke: '#17401f', strokeWidth: 1.5 }),
-    circle(6, 9, 5.5, '#ffe14a', { stroke: '#17401f', strokeWidth: 1.5 }),
-    ellipse(6.5, -9, 1.6, 4.2, '#1b0b2e'),
-    ellipse(6.5, 9, 1.6, 4.2, '#1b0b2e'),
-    circle(25, -4, 1.2, '#17401f'),
-    circle(25, 4, 1.2, '#17401f'),
+    circle(6, -9, 5.8, '#ffe14a', { stroke: C.line, strokeWidth: 1.6 }),
+    circle(6, 9, 5.8, '#ffe14a', { stroke: C.line, strokeWidth: 1.6 }),
+    ellipse(6.5, -9, 1.6, 4.4, C.line),
+    ellipse(6.5, 9, 1.6, 4.4, C.line),
+    circle(25, -4, 1.2, C.line),
+    circle(25, 4, 1.2, C.line),
   ].join('');
   s.add(group(`translate(${R[3][0]} ${R[3][1]}) rotate(${f(ang)})`, head));
   s.save();
 })();
 
 (function axe() {
+  // hache de la carte : manche brun-doré, fer gris-bleu évasé vers le tranchant, gros contour noir
   const s = new Svg('axe', 64, 64);
-  s.add(line('M14 56L42 14', '#5e3515', 8));
-  s.add(line('M14 56L42 14', '#b27a40', 4.5));
-  s.add(pth('M30 10Q46 2 58 14Q62 26 54 38L42 28Q44 20 36 18Z', '#d3dce8', { stroke: '#3b4558', strokeWidth: 3, strokeLinejoin: 'round' }));
-  s.add(line('M50 14Q56 24 51 33', '#fff', 2, { opacity: 0.8 }));
+  const steel = s.lin('steel', 0, 22, 0, 58, [
+    [0, '#e4ebf6'],
+    [1, '#8b98b2'],
+  ]);
+  // manche long qui part du fer vers le haut à droite
+  s.add(pth('M17 49C29 39 42 24 48 7L57 11C53 29 39 46 26 56Z', '#d08e36', { stroke: C.line, strokeWidth: 3.2, strokeLinejoin: 'round' }));
+  s.add(line('M28 44C38 35 46 23 51 12', '#f4bd68', 2.4, { opacity: 0.85 }));
+  // fer : bloc carré sur le manche, tranchant évasé vers le bas
+  s.add(pth('M4 44L19 37L31 46Q35 55 29 62Q17 60 8 57Z', steel, { stroke: C.line, strokeWidth: 3.2, strokeLinejoin: 'round' }));
+  s.add(pth('M6.6 44.2L19 38.6L22 41.6L9 47.6Z', '#f7faff', { opacity: 0.95 }));
+  s.add(line('M20 52L28 56', '#6b7892', 1.8, { opacity: 0.85 }));
   s.save();
 })();
 
 (function rod() {
+  // canne de la carte : canne noire à anneaux, liège, moulinet gris-bleu, fil turquoise, leurre rouge et blanc
   const s = new Svg('rod', 64, 64);
-  s.add(line('M8 58Q30 38 54 8', '#5e3515', 5));
-  s.add(line('M8 58Q30 38 54 8', '#b27a40', 2.4));
-  s.add(line('M54 8Q62 28 54 46', '#fff', 1.4, { opacity: 0.9 }));
-  s.add(line('M54 46Q54 56 47 54', '#c9d3e0', 2.4), circle(54, 44, 3, '#e0243a', { stroke: '#fff', strokeWidth: 1.2 }));
+  s.add(line('M11 55Q29 39 52 9', C.line, 5));
+  s.add(line('M11 55L20 45', C.line, 10.5), line('M11 55L20 45', '#e0953f', 6.5));
+  for (const t of [0.42, 0.6, 0.76, 0.9]) {
+    const x = (1 - t) * (1 - t) * 11 + 2 * (1 - t) * t * 29 + t * t * 52;
+    const y = (1 - t) * (1 - t) * 55 + 2 * (1 - t) * t * 39 + t * t * 9;
+    s.add(circle(x, y, 2.6, '#cdd5e3', { stroke: C.line, strokeWidth: 1.4 }));
+  }
+  s.add(circle(27, 49, 8, '#9fb0c9', { stroke: C.line, strokeWidth: 2.6 }), circle(27, 49, 3.2, '#e2e8f2', { stroke: C.line, strokeWidth: 1.4 }));
+  s.add(line('M52 9C63 24 60 40 46 49', '#37c3cc', 2.2));
+  s.add(group('translate(44 53) rotate(-25)', ellipse(0, 0, 8.5, 4, '#fff', { stroke: C.line, strokeWidth: 1.8 }), pth('M-8.5 0Q-8.5 -4 0 -4Q-3 0 0 4Q-8.5 4 -8.5 0Z', '#e0243a', { stroke: C.line, strokeWidth: 1.4 })));
+  s.add(circle(52, 47, 1.8, C.line), circle(54.5, 42, 1.8, C.line), circle(57, 37, 1.8, C.line));
   s.save();
 })();
 
@@ -485,15 +573,15 @@ const stars = (svg, rnd, n, maxY) =>
   s.add(line('M14 1V11', '#fff', 2.2));
   s.add(ellipse(14, 26, 12, 14, '#fff'));
   s.add(pth('M2.4 22A12 14 0 0 1 25.6 22Z', '#e0243a'));
-  s.add(ellipse(14, 26, 12, 14, 'none', { stroke: '#5a2f70', strokeWidth: 2 }));
+  s.add(ellipse(14, 26, 12, 14, 'none', { stroke: C.line, strokeWidth: 2.2 }));
   s.save();
 })();
 
 (function ripple() {
-  // Cercles de pêche/lancer (décor d'animation)
+  // cercles d'eau : écume blanche
   const s = new Svg('ripple', 120, 40);
-  s.add(ellipse(60, 20, 56, 15, 'none', { stroke: '#fff', strokeWidth: 2.5, opacity: 0.8 }));
-  s.add(ellipse(60, 20, 34, 9, 'none', { stroke: '#fff', strokeWidth: 2, opacity: 0.8 }));
-  s.add(ellipse(60, 20, 14, 4, 'none', { stroke: '#fff', strokeWidth: 1.6, opacity: 0.8 }));
+  s.add(ellipse(60, 20, 56, 15, 'none', { stroke: '#fff', strokeWidth: 3, opacity: 0.9 }));
+  s.add(ellipse(60, 20, 34, 9, 'none', { stroke: '#fff', strokeWidth: 2.4, opacity: 0.9 }));
+  s.add(ellipse(60, 20, 14, 4, 'none', { stroke: '#fff', strokeWidth: 1.8, opacity: 0.9 }));
   s.save();
 })();

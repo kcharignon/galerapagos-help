@@ -36,8 +36,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.drawWithContent
@@ -70,22 +72,22 @@ private fun HomeScreen(onWood: () -> Unit, onSea: () -> Unit) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF5B2A78), Color(0xFF2A0F3D), Color(0xFF150B2E))))
+            .background(
+                Brush.verticalGradient(
+                    0f to Gx.SkyTop,
+                    0.22f to Gx.Sky,
+                    0.40f to Color(0xFFA5DCF7),
+                    0.66f to Gx.Sand,
+                    1f to Gx.Sand2,
+                ),
+            )
             .statusBarsPadding()
             .navigationBarsPadding()
             .padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Logo()
-        Text(
-            "BOIS & POISSON DU NAUFRAGÉ",
-            modifier = Modifier.padding(top = 12.dp, bottom = 16.dp),
-            color = Gx.Sun,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 2.sp,
-            textAlign = TextAlign.Center,
-        )
+        WoodSign("BOIS & POISSON DU NAUFRAGÉ", Modifier.padding(top = 18.dp, bottom = 16.dp))
         HomeCard(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             scene = R.drawable.art_scene_jungle_bg,
@@ -93,8 +95,8 @@ private fun HomeScreen(onWood: () -> Unit, onSea: () -> Unit) {
             title = "La jungle",
             subtitle = "Chercher du bois… si le serpent dort.",
             icon = R.drawable.art_plank,
-            iconWidth = 84.dp,
-            iconAspect = 140f / 46f,
+            iconWidth = 116.dp,
+            iconAspect = 220f / 40f,
             onClick = onWood,
         )
         Box(Modifier.padding(top = 4.dp))
@@ -112,22 +114,32 @@ private fun HomeScreen(onWood: () -> Unit, onSea: () -> Unit) {
     }
 }
 
-/** Logo "pierre" : lettres dégradées, contour sombre et ombre portée (sans API texte expérimentale). */
+/** Logo « pierre » : plaque grise, lettres dorées cernées de sombre (sans API texte expérimentale). */
 @Composable
 private fun Logo() {
-    Column(Modifier.rotate(-2f), horizontalAlignment = Alignment.CenterHorizontally) {
-        LogoLine("GALÉ")
-        LogoLine("RAPAGOS")
+    val slab = RoundedCornerShape(20.dp)
+    Box(Modifier.rotate(-2f).padding(bottom = 7.dp)) {
+        Box(Modifier.matchParentSize().offset(y = 7.dp).background(Color(0xFF2E2B2A), slab))
+        Column(
+            Modifier
+                .clip(slab)
+                .background(Brush.verticalGradient(listOf(Color(0xFF8A8582), Color(0xFF5B5755), Color(0xFF46423F))))
+                .padding(start = 22.dp, end = 22.dp, top = 8.dp, bottom = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            LogoLine("GALÈ")
+            LogoLine("RAPAGOS")
+        }
     }
 }
 
 @Composable
 private fun LogoLine(text: String) {
     val style = TextStyle(fontSize = 54.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp, lineHeight = 50.sp)
-    val outline = Color(0xFF0C1A2B)
+    val outline = Color(0xFF2B2623)
     Box(contentAlignment = Alignment.Center) {
         // ombre + contour : copies décalées
-        for ((dx, dy) in listOf(0 to 6, -2 to 2, 2 to 2, -2 to -2, 2 to -2, 0 to 3)) {
+        for ((dx, dy) in listOf(0 to 5, -2 to 2, 2 to 2, -2 to -2, 2 to -2, 0 to 3)) {
             Text(text, Modifier.offset(dx.dp, dy.dp), color = outline, style = style)
         }
         Text(
@@ -137,12 +149,34 @@ private fun LogoLine(text: String) {
                 .drawWithContent {
                     drawContent()
                     drawRect(
-                        Brush.verticalGradient(listOf(Color(0xFFE6F0F5), Color(0xFF8FA8BD), Color(0xFF5B728A))),
+                        Brush.verticalGradient(listOf(Color(0xFFFFF0A8), Color(0xFFF0BE4A), Color(0xFFB97D1E))),
                         blendMode = BlendMode.SrcIn,
                     )
                 },
             color = Color.White,
             style = style,
+        )
+    }
+}
+
+/** Petit panneau de bois portant le sous-titre. */
+@Composable
+private fun WoodSign(text: String, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(6.dp)
+    Box(modifier.rotate(-1f)) {
+        Box(Modifier.matchParentSize().offset(y = 4.dp).background(Color(0x735A3A26), shape))
+        Text(
+            text,
+            Modifier
+                .clip(shape)
+                .background(Brush.verticalGradient(listOf(Color(0xFFECD09A), Color(0xFFD7AB66))))
+                .border(2.dp, Gx.Wood, shape)
+                .padding(horizontal = 18.dp, vertical = 7.dp),
+            color = Color(0xFF4A2F1C),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 1.3.sp,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -164,20 +198,20 @@ private fun HomeCard(
     val dy by animateDpAsState(if (pressed) 6.dp else 0.dp, tween(80), label = "cardPress")
     val shape = RoundedCornerShape(28.dp)
     Box(modifier.padding(bottom = 10.dp)) {
-        Box(Modifier.matchParentSize().offset(y = 10.dp).background(Color(0x59000000), shape))
+        Box(Modifier.matchParentSize().offset(y = 10.dp).background(Color(0x735A3A26), shape))
         Box(
             Modifier
                 .matchParentSize()
                 .offset(y = dy)
                 .clip(shape)
-                .border(2.dp, Color(0x33FFFFFF), shape)
+                .border(3.dp, Color.White, shape)
                 .clickable(interactionSource = source, indication = null, onClick = onClick),
         ) {
             Art(scene, Modifier.fillMaxSize(), ContentScale.Crop, BiasAlignment(0f, bias))
             Box(
                 Modifier
                     .fillMaxSize()
-                    .background(Brush.verticalGradient(0.35f to Color.Transparent, 1f to Color(0xD90C0414))),
+                    .background(Brush.verticalGradient(0.42f to Color.Transparent, 1f to Color(0xD1082C36))),
             )
             Row(
                 Modifier
@@ -187,8 +221,16 @@ private fun HomeCard(
                 verticalAlignment = Alignment.Bottom,
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(title, fontSize = 30.sp, fontWeight = FontWeight.Black, lineHeight = 32.sp)
-                    Text(subtitle, fontSize = 15.sp, lineHeight = 19.sp, modifier = Modifier.padding(top = 6.dp))
+                    OutlinedText(title, fontSize = 31.sp)
+                    Text(
+                        subtitle,
+                        Modifier.padding(top = 6.dp),
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        lineHeight = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        style = TextStyle(shadow = Shadow(Gx.Night, Offset(0f, 3f), 0f)),
+                    )
                 }
                 Art(icon, Modifier.width(iconWidth).aspectRatio(iconAspect))
             }

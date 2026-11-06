@@ -17,3 +17,10 @@ art/originals/
 # APK construit par `make android` et fichiers locaux
 dist/
 .env
+
+# Clés de signature : JAMAIS dans le dépôt (la seule clé suivie est la clé de débogage PUBLIQUE android/debug.keystore)
+*.p12
+*.jks
+*.pfx
+*.keystore
+!android/debug.keystore

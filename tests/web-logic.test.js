@@ -7,7 +7,7 @@ const path = require('node:path');
 
 const template = fs.readFileSync(path.join(__dirname, '..', 'web', 'index.template.html'), 'utf8');
 const code = template.split('// <game-logic>')[1].split('// </game-logic>')[0];
-const rules = new Function(`${code}; return { gatherWood, fishing, fishStats, biteChance, WOOD_BAG, FISH_BAG };`)();
+const rules = new Function(`${code}; return { gatherWood, fishing, fishStats, biteChance, githubLinks, WOOD_BAG, FISH_BAG };`)();
 
 const TRIALS = 200_000;
 const near = (actual, expected, tolerance = 0.01) =>
@@ -70,4 +70,17 @@ test('pêche avec canne : deux tirages sans remise, total = somme (2 à 5)', () 
 test('statistiques de pêche', () => {
   assert.deepEqual(rules.fishStats(1), { min: 1, max: 3, mean: 10 / 6 });
   assert.deepEqual(rules.fishStats(2), { min: 2, max: 5, mean: 20 / 6 });
+});
+
+test("liens GitHub déduits de l'adresse GitHub Pages", () => {
+  assert.deepEqual(rules.githubLinks('kantin.github.io', '/galerapagos/'), {
+    repo: 'https://github.com/kantin/galerapagos',
+    page: 'https://github.com/kantin/galerapagos/releases/tag/android-latest',
+    apk: 'https://github.com/kantin/galerapagos/releases/download/android-latest/galerapagos.apk',
+  });
+  assert.equal(rules.githubLinks('kantin.github.io', '/galerapagos/index.html').repo, 'https://github.com/kantin/galerapagos');
+  assert.equal(rules.githubLinks('kantin.github.io', '/'), null, 'page de compte : pas de dépôt');
+  assert.equal(rules.githubLinks('localhost', '/galerapagos/'), null);
+  assert.equal(rules.githubLinks('evil.example', '/x/'), null);
+  assert.equal(rules.githubLinks('github.io.evil.example', '/x/'), null);
 });

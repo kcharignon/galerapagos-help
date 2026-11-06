@@ -184,7 +184,8 @@ fun WoodScreen(prefs: Prefs, onBack: () -> Unit) {
                     modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = 10.dp, bottom = 12.dp).heightIn(min = 40.dp),
                     fontSize = 14.sp,
                     lineHeight = 19.sp,
-                    color = Gx.Paper.copy(alpha = 0.92f),
+                    color = Gx.Ink2,
+                    fontWeight = FontWeight.Bold,
                 )
                 CtaButton(
                     text = if (extra > 0) "S’enfoncer dans la jungle" else "Ramasser en lisière",
@@ -209,8 +210,8 @@ private fun RiskLabel(extra: Int) {
         Text(
             if (extra > 0) "Risque de morsure : $pct %" else "Aucun risque",
             fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = Gx.Sun,
+            fontWeight = FontWeight.ExtraBold,
+            color = Gx.OrangeDeep,
         )
     }
 }
@@ -224,9 +225,9 @@ private fun ExtraChips(selected: Int, enabled: Boolean, onSelect: (Int) -> Unit)
                 onClick = { onSelect(n) },
                 modifier = Modifier.weight(1f).height(58.dp),
                 face = Brush.verticalGradient(
-                    if (on) listOf(Color(0xFFFFE3A8), Gx.Sun) else listOf(Color(0xFF4A3263), Color(0xFF3B2656)),
+                    if (on) listOf(Color(0xFFFFB15F), Gx.Orange) else listOf(Gx.Paper, Gx.Paper),
                 ),
-                shadow = if (on) Color(0xFFB8893F) else Color(0xFF1B0B28),
+                shadow = if (on) Color(0xFFB4501B) else Color(0xFFC79E68),
                 depth = 4.dp,
                 corner = 16.dp,
                 enabled = enabled,
@@ -236,7 +237,7 @@ private fun ExtraChips(selected: Int, enabled: Boolean, onSelect: (Int) -> Unit)
                         n.toString(),
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Black,
-                        color = if (on) Color(0xFF3A1650) else Gx.Paper,
+                        color = if (on) Color.White else Gx.Wood,
                         lineHeight = 26.sp,
                     )
                     if (n == 0) {
@@ -244,7 +245,7 @@ private fun ExtraChips(selected: Int, enabled: Boolean, onSelect: (Int) -> Unit)
                             "PRUDENT",
                             fontSize = 9.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (on) Color(0xFF3A1650) else Gx.Paper,
+                            color = if (on) Color.White else Gx.Wood,
                             lineHeight = 9.sp,
                         )
                     }
@@ -268,11 +269,11 @@ private fun RiskMeter(fraction: Float, visible: Boolean) {
             .height(8.dp)
             .drawBehind {
                 val corner = CornerRadius(4.dp.toPx())
-                drawRoundRect(Color(0x1FFFFFFF), cornerRadius = corner)
+                drawRoundRect(Color(0x335A3A26), cornerRadius = corner)
                 if (shown > 0f) {
                     drawRoundRect(
                         brush = Brush.horizontalGradient(
-                            listOf(Gx.Leaf, Color(0xFFE8D048), Gx.Danger),
+                            listOf(Gx.Leaf, Color(0xFFF0CF3A), Gx.Red),
                             startX = 0f,
                             endX = size.width,
                         ),
@@ -322,14 +323,14 @@ private val PLANK_DXS = listOf(-8, 10, -4, 7, -10, 5, -3)
 
 @Composable
 private fun PlankPile(total: Int, free: Int) {
-    Box(Modifier.size(240.dp, 268.dp)) {
+    Box(Modifier.size(270.dp, 268.dp)) {
         Box(
             Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 30.dp)
                 .fillMaxWidth()
                 .height(20.dp)
-                .background(Color(0x59000000), CircleShape),
+                .background(Color(0x593C230A), CircleShape),
         )
         for (i in 0 until total.coerceAtMost(PLANK_ROTS.size)) {
             Plank(index = i, free = i < free, rot = PLANK_ROTS[i], dx = PLANK_DXS[i])
@@ -348,8 +349,8 @@ private fun BoxScope.Plank(index: Int, free: Boolean, rot: Float, dx: Int) {
         Modifier
             .align(Alignment.BottomCenter)
             .offset(x = dx.dp, y = (-31 * index).dp)
-            .width(150.dp)
-            .aspectRatio(140f / 46f)
+            .width(236.dp)
+            .aspectRatio(220f / 40f)
             .graphicsLayer {
                 translationY = (1f - p.value) * -460.dp.toPx()
                 rotationZ = rot + (1f - p.value) * 50f

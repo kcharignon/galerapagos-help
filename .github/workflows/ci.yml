@@ -1,0 +1,42 @@
+name: CI
+
+# Le site : règles de tirage, fichiers générés à jour (SVG, drawables Android, page unique), image Docker de production.
+# L'application Android a son propre workflow (android.yml) : elle ne se construit que si android/ ou ses illustrations changent.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site:
+    name: Site (tests, fichiers générés, image)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+      - name: Tests des règles de tirage
+        run: node --test tests/web-logic.test.js
+      - name: Les fichiers générés sont à jour
+        run: |
+          npm run build
+          if [ -n "$(git status --porcelain)" ]; then
+            git status --short
+            echo "::error title=Fichiers générés périmés::art/, android/app/src/main/res/drawable/ ou web/index.html ne correspondent pas aux sources. Lance « make build » et commite le résultat."
+            exit 1
+          fi
+      - name: Image de production, servie et vérifiée
+        run: |
+          docker build --target prod -t galerapagos-web .
+          docker run -d --name web -p 8080:80 galerapagos-web
+          for _ in $(seq 1 20); do curl -fsS http://localhost:8080/healthz && break; sleep 1; done
+          curl -fsS http://localhost:8080/ | grep -q "Galèrapagos"
+          docker rm -f web

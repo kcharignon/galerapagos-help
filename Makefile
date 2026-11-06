@@ -1,6 +1,9 @@
 .DEFAULT_GOAL := help
 DOCKER_COMPOSE ?= docker compose
 WEB_PORT ?= 8080
+# Les commandes Android reconstruisent l'image si son Dockerfile a changé (le cache la rend instantanée) ; la CI la précharge et passe ANDROID_BUILD=
+ANDROID_BUILD ?= --build
+ANDROID_RUN = $(DOCKER_COMPOSE) --profile android run --rm $(ANDROID_BUILD)
 # Les conteneurs qui écrivent dans le dépôt (build, android) tournent avec ton identifiant, pas root.
 export HOST_UID := $(shell id -u)
 export HOST_GID := $(shell id -g)
@@ -35,17 +38,27 @@ build: ## Regenerate art/*.svg, the Android drawables and web/index.html from th
 	@$(DOCKER_COMPOSE) --profile build run --rm build
 
 test: ## Run the unit tests of the site's draw rules
-	@$(DOCKER_COMPOSE) --profile test run --rm test
+	@$(DOCKER_COMPOSE) --profile test run --rm --build test
 
 ## —— Android 🤖 —————————————————————————————————————————————————————————————
-.PHONY: android android-test check
+.PHONY: android android-test android-release android-release-verify android-release-selftest check
 
 android: ## Build the debug APK: dist/galerapagos-debug.apk (first run downloads the SDK and Gradle: several minutes)
 	@mkdir -p dist
-	@$(DOCKER_COMPOSE) --profile android run --rm android
+	@$(ANDROID_RUN) android
 
 android-test: ## Run the Kotlin unit tests of the draw rules
-	@$(DOCKER_COMPOSE) --profile android run --rm android-test
+	@$(ANDROID_RUN) android-test
+
+android-release: ## Build the signed APK dist/galerapagos.apk (needs ANDROID_KEYSTORE_BASE64/_PASSWORD, ANDROID_KEY_ALIAS/_PASSWORD and ANDROID_VERSION_TAG=android-vX.Y.Z; refuses without a key)
+	@mkdir -p dist
+	@$(ANDROID_RUN) android ./build.sh release
+
+android-release-verify: ## Check the signed APK right after android-release (needs ANDROID_VERSION_TAG and ANDROID_EXPECTED_CERT_SHA256, the public certificate fingerprint)
+	@$(ANDROID_RUN) android ./build.sh verify-release
+
+android-release-selftest: ## Prove the release refuses without a key and succeeds with a throwaway one (nothing is kept)
+	@$(ANDROID_RUN) android ./build.sh release-selftest
 
 check: test android-test ## Run all the tests
 

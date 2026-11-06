@@ -129,7 +129,8 @@ fun SeaScreen(prefs: Prefs, onBack: () -> Unit) {
                     modifier = Modifier.padding(start = 2.dp, end = 2.dp, top = 16.dp, bottom = 12.dp).heightIn(min = 40.dp),
                     fontSize = 14.sp,
                     lineHeight = 19.sp,
-                    color = Gx.Paper.copy(alpha = 0.92f),
+                    color = Gx.Ink2,
+                    fontWeight = FontWeight.Bold,
                 )
                 CtaButton(text = "Lancer la ligne", sea = true, enabled = idle, onClick = { start() })
             }
@@ -245,12 +246,10 @@ private fun CatchTag(text: String, delayMs: Int) {
         delay(delayMs + 500L)
         a.animateTo(1f, tween(300))
     }
-    Text(
+    OutlinedText(
         text,
+        fontSize = 21.sp,
         modifier = Modifier.width(44.dp).graphicsLayer { alpha = a.value },
-        color = Gx.Sun,
-        fontSize = 20.sp,
-        fontWeight = FontWeight.Black,
         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
     )
 }

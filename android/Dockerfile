@@ -31,6 +31,7 @@ RUN (set +o pipefail; yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager
 
 # L'image tourne avec l'identifiant de l'utilisateur de la machine (`user:` de compose) : le cache de Gradle, la clé de débogage
 # (ANDROID_USER_HOME) et le dossier personnel doivent être ouverts en écriture à tout le monde. /gradle est un volume nommé.
+ENV ANDROID_BUILD_TOOLS=${ANDROID_BUILD_TOOLS}
 ENV GRADLE_USER_HOME=/gradle
 ENV ANDROID_USER_HOME=/gradle/android
 ENV HOME=/tmp/home
